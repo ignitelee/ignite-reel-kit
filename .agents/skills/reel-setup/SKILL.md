@@ -58,7 +58,8 @@ run those too, then close and reopen Claude Code. Then: `brew install node git f
 1. `npm ci` (installs the kit's own packages; a minute or two).
 2. `npx hyperframes browser ensure` (downloads the video renderer once).
 3. Speech model, downloaded once (~1.6 GB, a few minutes on normal broadband). Tell them it's a one-off:
-   `uv run --quiet --python 3.12.15 --with faster-whisper==1.2.1 python -c "from faster_whisper import WhisperModel; WhisperModel('large-v3-turbo', device='cpu', compute_type='int8'); print('speech model ready')"`
+   `npm run transcribe -- --prepare` (always use this, not a raw `uv run`: on Windows it keeps Python in
+   `~/.uv-python`, because the Claude desktop app's private copy of AppData breaks uv's default Python folder).
 4. `npm test` should pass. Run `node scripts/reel-doctor.mjs` again: everything but the brand should be OK.
 
 ## 4. Their brand kit (writes brand/brand.json)
