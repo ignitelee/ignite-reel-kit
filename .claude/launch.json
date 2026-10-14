@@ -2,6 +2,12 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "reel-dashboard",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dashboard", "--", "--no-open"],
+      "port": 4747
+    },
+    {
       "name": "hyperframes-studio",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["hyperframes", "preview", "video-projects/claude-edit-intro", "--port", "3010", "--force-new"],

@@ -242,9 +242,17 @@ details summary{cursor:pointer;font-weight:700}
       </div>
       <div class="opt">
         <label class="t">Anything else? (optional) <i class="tip">i<span class="tt">Tell Claude anything in normal words. For example: "Make the hook about saving time", "Cut the bit where I cough", or "Don't use the part about prices". Leave it empty if you have nothing to add.</span></i></label>
-        <textarea id="notes" placeholder="e.g. Start with the line about my first month"></textarea>
+        <textarea id="notes" placeholder="e.g. Start with the line about my first month. Cut the bit where I cough. Keep it under 45 seconds. Make it feel calm."></textarea>
+        <div class="small muted" style="margin-top:6px">The more detail you give here, the fewer changes you'll need later.</div>
       </div>
     </div>
+  </div>
+
+  <div class="notice warn" style="margin:16px 0">
+    <b>🎯 Try to get it right first time.</b> Every change you ask for afterwards means Claude rebuilds the whole reel:
+    it takes another <b>10 to 20 minutes</b> and uses <b>more of your Claude plan</b>. So before you press "Copy my message",
+    check your choices above and put everything you want in <b>"Anything else?"</b> (which bits to keep or cut, the feel, the length).
+    <i class="tip">i<span class="tt">Making a reel uses some of your Claude plan's usage, like a long chat. Each change uses about as much again. One clear request with lots of detail is faster and cheaper than lots of small changes afterwards.</span></i>
   </div>
 
   <!-- step 3 -->
@@ -392,7 +400,7 @@ details summary{cursor:pointer;font-weight:700}
   <details><summary>Where are my finished videos?</summary>
     <p>On the <b>My reels</b> tab: press <b>Download</b>, or <b>Show in folder</b> to see the files. They're saved in the kit's <b>video-projects</b> folder.</p></details>
   <details><summary>I want to change something in a reel</summary>
-    <p><b>Warning: even a small change takes a long time</b> (often 10 to 20 minutes, longer for long reels), because the whole reel has to be rebuilt and re-rendered. So write <b>all</b> your changes in one go. Under the reel, type what you want changed in normal words, press <b>Make a change message</b>, then paste that into the <b>same Claude chat</b> and press Enter.</p></details>
+    <p><b>Warning: even a small change takes a long time</b> (often 10 to 20 minutes, longer for long reels) <b>and uses more of your Claude plan</b>, because the whole reel has to be rebuilt and re-rendered. Try to get it right first time by putting lots of detail in "Anything else?" before you send it. So write <b>all</b> your changes in one go. Under the reel, type what you want changed in normal words, press <b>Make a change message</b>, then paste that into the <b>same Claude chat</b> and press Enter.</p></details>
   <details><summary>How do I add music?</summary>
     <p>Go to <b>My brand</b>, press <b>Open my music folder</b>, and put MP3 songs into the mood folders (calm, upbeat, inspiring, emotional). Free songs: YouTube Audio Library or Pixabay Music.</p></details>
   <details><summary>I have more than one video, or pictures too</summary>
@@ -665,28 +673,55 @@ function postSections(md) {
 const openBoxes = new Set(); // which "Show more" boxes are open (kept across refreshes)
 const mdInline = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '$1');
 const plain = (t) => t.replace(/\*\*(.+?)\*\*/g, '$1').replace(/`([^`]+)`/g, '$1');
-function capBox(key, title, text, cls = '') {
+function capBox(key, title, text, cls = '', tip = '') {
   const long = text.length > 420 || text.split('\n').length > 7, open = openBoxes.has(key);
-  return `<div class="capbox ${cls}"><div class="hd"><b>${esc(title)}</b>
+  return `<div class="capbox ${cls}"><div class="hd"><b>${esc(title)}${tip ? ` <i class="tip">i<span class="tt">${tip}</span></i>` : ''}</b>
       <button class="btn ghost small" style="padding:6px 12px" data-copy="${esc(plain(text))}">Copy</button></div>
     <div class="txt${long && !open ? ' collapsed' : ''}">${mdInline(text)}</div>
     ${long ? `<button class="more" data-more="${esc(key)}">${open ? 'Show less' : 'Show more'}</button>` : ''}</div>`;
 }
 // everything in POST.md for one reel: hook + alternates, cover text, every platform caption, anything else
-function postHTML(jid, i, md) {
+// what each caption box is for, in plain words
+const CAP_TIPS = {
+  instagram: 'Paste this as your caption when you post the reel on Instagram. The first line shows before "more", so it is written to make people tap.',
+  tiktok: 'Paste this as your caption when you post on TikTok. TikTok captions are meant to be short: that is normal.',
+  facebook: 'Paste this as your caption when you post the reel on Facebook.',
+  youtube: 'When you upload the Short: the title goes in the title box, the rest in the description.',
+  pinned: 'After you post, write this as a comment on your own video. Then press and hold your comment and tap Pin, so it stays at the top and gets people talking.',
+};
+const capTip = (k) => CAP_TIPS[Object.keys(CAP_TIPS).find((p) => k.toLowerCase().includes(p))] || 'Press Copy and paste it where it says when you post.';
+function postHTML(jid, i, md, reelTitle) {
   const sec = postSections(md), keys = Object.keys(sec).filter((k) => sec[k]);
   if (!keys.length) return '';
-  const isHook = (k) => /hook/i.test(k), isCover = (k) => /cover/i.test(k);
+  const hookK = keys.find((k) => /hook/i.test(k)), coverK = keys.find((k) => /cover/i.test(k));
   const plat = (k) => /instagram|tiktok|facebook|youtube|shorts|pinned|linkedin|twitter|threads/i.test(k);
   const key = (k) => `${jid}|${i}|${k}`;
   let h = '';
-  const top = keys.filter((k) => isHook(k) || isCover(k));
-  if (top.length) h += `<div class="secttl">Hook and cover <i class="tip">i<span class="tt">The hook is the line on screen in the first 2 seconds. The alternates are other openings you could test. The cover text is the words to put on the reel's cover picture when you post it.</span></i></div>`
-    + top.map((k) => capBox(key(k), k, sec[k], 'hook')).join('');
-  const caps = keys.filter((k) => !isHook(k) && !isCover(k) && plat(k));
+  // cover photo: the text to put on it + the best moment to use
+  if (coverK) {
+    const raw = sec[coverK], bold = /\*\*(.+?)\*\*/.exec(raw);
+    const text = bold ? bold[1] : raw.split('\n')[0];
+    const moment = (bold ? raw.replace(bold[0], '') : raw.split('\n').slice(1).join(' ')).replace(/^[\s,.:-]+/, '').replace(/^cover frame\s*/i, '').replace(/\.$/, '').trim();
+    h += `<div class="secttl">Cover photo <i class="tip">i<span class="tt">The cover is the still picture people see on your profile grid before they press play. When you post: tap "Edit cover" (Instagram) or "Select cover" (TikTok), pick the moment below, and add this text on top.</span></i></div>`
+      + `<div class="capbox hook"><div class="hd"><b>Text for your cover photo</b><button class="btn ghost small" style="padding:6px 12px" data-copy="${esc(plain(text))}">Copy</button></div>
+          <div class="txt" style="font-size:20px;font-weight:800">${mdInline(text)}</div>
+          ${moment ? `<div class="small muted" style="margin-top:8px">Best moment to use as the cover: ${mdInline(moment)}</div>` : ''}</div>`;
+  }
+  // the opening hook: already in the video; alternatives can be swapped in
+  if (hookK) {
+    const raw = sec[hookK];
+    const onScreen = (/on screen:\**\s*"?([^"\n]+)"?/i.exec(raw) || [])[1];
+    const altLine = raw.split('\n').find((l) => /alternat/i.test(l)) || '';
+    const alts = [...altLine.matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+    h += `<div class="secttl">Opening hook <i class="tip">i<span class="tt">The words on screen in the first 2 seconds, to stop people scrolling. It's already in your video. Want a different one? Press "Use this instead" on one of the alternatives and paste the message into the same Claude chat: Claude remakes the reel with that opening.</span></i></div>`
+      + `<div class="capbox hook">${onScreen ? `<div class="small muted">In your video now:</div><div class="txt" style="font-weight:700;margin-bottom:6px">${esc(onScreen)}</div>` : `<div class="txt">${mdInline(raw)}</div>`}`
+      + (alts.length ? `<div class="small muted" style="margin-top:6px">Other openings you could use:</div>` + alts.map((t) => `<div class="row" style="justify-content:space-between;gap:10px;margin-top:6px"><span>${esc(t)}</span><button class="btn ghost small" style="padding:6px 12px" data-usehook="${esc(t)}" data-job="${jid}" data-reel="${esc(reelTitle || '')}">Use this instead</button></div>`).join('') : '')
+      + `</div>`;
+  }
+  const caps = keys.filter((k) => k !== hookK && k !== coverK && plat(k));
   if (caps.length) h += `<div class="secttl">Your captions <i class="tip">i<span class="tt">Ready-written for each app, with hashtags. Press Copy, then paste it when you post the reel on that app.</span></i></div>`
-    + caps.map((k) => capBox(key(k), k, sec[k])).join('');
-  const other = keys.filter((k) => !top.includes(k) && !caps.includes(k));
+    + caps.map((k) => capBox(key(k), k, sec[k], '', capTip(k))).join('');
+  const other = keys.filter((k) => k !== hookK && k !== coverK && !caps.includes(k) && !/^variants?$/i.test(k));
   if (other.length) h += `<div class="secttl">Also for this reel</div>` + other.map((k) => capBox(key(k), k, sec[k])).join('');
   return h;
 }
@@ -712,11 +747,11 @@ function jobHTML(j, big) {
           ${r.hook ? `<div class="small"><span class="muted">Hook:</span> ${esc(r.hook)}</div>` : ''}${r.length ? `<div class="small muted">${esc(r.length)} long</div>` : ''}
           <div class="row"><a class="btn small" style="padding:9px 14px;text-decoration:none" href="${src}&dl=1">Download</a>
             <button class="btn ghost small" style="padding:9px 14px" data-open="${j.id}">Show in folder</button></div>
-          ${postHTML(j.id, i, r.postText)}
+          ${postHTML(j.id, i, r.postText, r.title)}
           ${(r.variants || []).length ? `<div class="small">Hook test versions: ${r.variants.map((v, n) => `<a href="/file?path=${encodeURIComponent(v)}&dl=1">version ${n + 2}</a>`).join(' · ')}</div>` : ''}
           <details><summary class="small">Change something</summary>
             <p class="small muted">Say what you want in normal words, e.g. "make the captions bigger" or "use a different hook". Then paste the message into the <b>same Claude chat</b>.</p>
-            <div class="notice warn small" style="margin:8px 0">⏱️ <b>Even a small change takes a while</b> (often 10 to 20 minutes), because Claude has to rebuild and re-render the whole reel, not just the bit you changed. <b>Put all your changes in one message</b> rather than one at a time.</div>
+            <div class="notice warn small" style="margin:8px 0">⏱️ <b>Even a small change takes a while</b> (often 10 to 20 minutes) <b>and uses more of your Claude plan</b>, because Claude rebuilds and re-renders the whole reel, not just the bit you changed. <b>Put all your changes in one message</b>, with as much detail as you can, rather than one at a time.</div>
             <textarea data-note="${i}" placeholder="What should change?"></textarea>
             <button class="btn ghost small" style="margin-top:8px;padding:8px 14px" data-change="${j.id}" data-reel="${esc(r.title || '')}" data-i="${i}">Make a change message</button></details>
         </div></div>`;
@@ -727,6 +762,12 @@ function jobHTML(j, big) {
   return h + `</div>`;
 }
 function wire(root) {
+  $$('[data-usehook]', root).forEach((b) => b.onclick = async () => {
+    if (!confirm('This remakes the whole reel with the new opening. It takes 10 to 20 minutes and uses more of your Claude plan. Go ahead?')) return;
+    const note = `Change the opening hook (the words on screen at the start) to: "${b.dataset.usehook}". Keep everything else the same.`;
+    try { const j = await post(`/api/jobs/${b.dataset.job}/change`, { reel: b.dataset.reel, note }); await copy(j.message); toast('Copied! Paste it into the same Claude chat.'); refresh(); }
+    catch (e) { alert(e.message); }
+  });
   $$('[data-more]', root).forEach((b) => b.onclick = () => {
     const k = b.dataset.more, open = !openBoxes.has(k); open ? openBoxes.add(k) : openBoxes.delete(k);
     b.previousElementSibling.classList.toggle('collapsed', !open); b.textContent = open ? 'Show less' : 'Show more';

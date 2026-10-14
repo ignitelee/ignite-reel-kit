@@ -45,8 +45,14 @@ video path and their choices, and says how to report progress (`status.json`, ev
 (up to 3: join them first, in order) and up to 3 extra pictures/clips, each with a "how" (beside them or
 full screen) and a "when" in their words. These users often don't read long messages: keep chat
 replies to a line or two, don't stop for a draft review, and only ask a question if you truly can't continue. Change requests ("Reel job <id>: please make this change...") come in the same chat: make
-the change, re-render, update both files. If they say "open my reel dashboard", run `npm run dashboard` in
-the background.
+the change, re-render, update both files.
+
+**"Open my reel dashboard":** open it inside the Claude app's side panel: start the `reel-dashboard`
+configuration from `.claude/launch.json` with the browser panel's preview tool (`preview_start` with name
+`reel-dashboard`). If that tool isn't available (e.g. Claude Code in a terminal), run `npm run dashboard` in
+the background instead: it opens in their normal browser at http://localhost:4747. Tell them: "To bring
+it back later, just say: open my reel dashboard." (Tested in the Claude app panel: dragging a video in and
+Download both work. If either ever fails, clicking the box to choose a file, or "Show in folder", always works.)
 
 In results.json, `"variants"` is a list of the hook-test MP4 **file paths** (strings, relative to the kit
 folder), e.g. `"variants": ["video-projects/<name>/renders/<name> - v2-question.mp4"]`, or `[]`. Don't
@@ -224,7 +230,16 @@ income" only if accurate). Hashtags fit the topic, never trading tags on a non-t
 copy (embedded mode): no "not X but Y", no "Here's the thing", no dashes, no triads for rhythm, no
 "game-changer/unlock/elevate", no emoji bullets.
 
-Sections: hook used + 2 alternates; cover text (2-5 words) + best cover frame; one caption per chosen
+Use EXACTLY these first two sections (the dashboard reads them):
+```
+## Hook
+- **On screen:** "the hook text in the video"
+- **Alternates:** "another opening" / "a third opening"
+
+## Cover text
+**COVER WORDS**, cover frame around 0:14 (what is happening at that moment)
+```
+Then: one caption per chosen
 platform (Instagram: line 1 works alone in ~125 characters, 3-6 short lines, one CTA (their usual `cta`
 from brand.json, or one that fits the video), 3-5 hashtags; TikTok: shorter, keyword-rich, 3-5 hashtags; Facebook: Instagram adapted;
 YouTube Shorts: title <= 70 characters with the keyword early, 2-3 line description, 3 hashtags);

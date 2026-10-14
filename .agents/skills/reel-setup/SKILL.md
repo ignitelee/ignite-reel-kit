@@ -106,10 +106,12 @@ Explain the kit has no music (licences). They can drop tracks into `brand/music/
 
 Run `node scripts/reel-doctor.mjs` (all OK). Then:
 1. `npm run shortcut`: puts an **IGNITE Reels** icon on their desktop that opens the dashboard.
-2. Start the dashboard in the background (`npm run dashboard`, run it in the background so this chat stays
-   free). It opens in their browser at http://localhost:4747.
+2. Open the dashboard in the Claude app's side panel: the browser panel's preview tool (`preview_start`)
+   with name `reel-dashboard` (from `.claude/launch.json`). If that tool isn't available, run
+   `npm run dashboard` in the background instead (it opens in their normal browser at http://localhost:4747).
 3. Tell them, in three short lines: they're set up; the dashboard is where they make reels (drop a video,
    pick options, press "Copy my message", paste it back into Claude here, click Allow when asked); next time
-   they double-click **IGNITE Reels** on the desktop and leave the small black window open.
+   they just say "open my reel dashboard" to Claude, or double-click **IGNITE Reels** on the desktop and leave
+   the small black window open.
 
 If they already filled in their brand in step 4, it's in the dashboard's "My brand" tab too (same file).
