@@ -26,17 +26,14 @@ too, kept in a `.env` file that is never uploaded. You don't need any of them to
 
 Open the Claude app, click **Code**, and paste this:
 
-> Please set up the IGNITE Reel Kit for me. I'm not technical, so keep every message short and simple.
-> Run every command yourself: I'll just click Allow when you ask. Never ask me to copy or type a command
-> unless it truly can't be run by you (for example it needs my computer password). If that happens, tell
-> me exactly where to paste it, click by click (which app to open, how to open it, where to click), and
-> that any "Do you want to allow this app to make changes?" box needs Yes.
-> First, if git isn't installed, install it (on Windows: with winget, then refresh PATH in your next
-> PowerShell command with $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' +
-> [Environment]::GetEnvironmentVariable('Path','User') so I don't have to restart anything). Then download the kit with git from
-> https://github.com/ignitelee/ignite-reel-kit into my Documents folder (if an ignite-reel-kit folder is
-> already there from an earlier try, update it with git pull instead), read the file
-> `.claude/skills/reel-setup/SKILL.md` inside it, and follow it step by step.
+> Please set up the IGNITE Reel Kit for me from https://github.com/ignitelee/ignite-reel-kit
+> I'm new to this, so keep your messages short and simple, and run every step yourself: I'll just click Allow.
+> If git isn't installed, install it first. If Windows can't find a tool you've just installed, refresh the
+> PATH yourself instead of asking me to restart. Download the kit into my Documents folder (or update it if
+> it's already there), then open `.claude/skills/reel-setup/SKILL.md` inside it and follow it step by step.
+> If anything needs my password, tell me exactly where to type it, click by click.
+
+New to all this? Read [START HERE](START%20HERE.md) first: it walks you through everything with pictures.
 
 Claude runs each step for you (you click **Allow**), installs the tools, downloads the speech model (about 1.6 GB, once), and asks for your logo and
 your brand colour.
