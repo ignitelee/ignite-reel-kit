@@ -19,6 +19,10 @@ const PUB = join(KIT, 'dashboard', 'public');
 const JOBS = join(KIT, 'dashboard', 'jobs');
 const BRAND = join(KIT, 'brand', 'brand.json');
 const EXAMPLE = join(KIT, 'brand', 'brand.example.json');
+// the user's own library of photos and clips, reused across reels (stays on their computer, kept on updates)
+const LIB = join(KIT, 'brand', 'my-library');
+const LIBJSON = join(LIB, 'library.json');
+const libItems = () => readJSON(LIBJSON, []);
 const PORT = Number(process.env.REEL_DASHBOARD_PORT || 4747);
 const WIN = platform() === 'win32', MAC = platform() === 'darwin';
 mkdirSync(JOBS, { recursive: true });
@@ -93,8 +97,12 @@ function jobInstructions(job) {
     `- Captions on the video: ${o.captions === false ? 'NO' : 'yes'}. Graphics: ${o.graphics || 'full'}.`,
     `- Music: ${o.music && o.music !== 'none' ? `${o.music} mood (brand/music/${o.music}/), ${o.musicLevel || 'quiet'} under the voice` : 'none'}.`,
     `- Hook test versions (trial reels) per reel: ${o.variants ? o.variants : 'none'}.`,
+    `- Stock footage (free Pexels clips): ${o.broll === 'none' ? 'NONE' : 'a little where it fits (1-3 short cutaways; skip if there is no Pexels key)'}.`,
+    `- Their logo badge: ${o.logo === 'always' ? 'always show it' : o.logo === 'never' ? 'never show it ("logo": false)' : 'auto: only if the video is about their business, trading or IGNITE'}.`,
     o.notes ? `- Their notes: ${o.notes}` : null,
     ...extraLines(job),
+    ...(libItems().length ? [`- Their own library (\`brand/my-library/library.json\`, ${libItems().length} photos/clips with their notes): use items that fit`,
+      `  this video (copy into the project's assets) BEFORE stock footage; if an item has no note, look at it to see what it shows.`] : []),
     ``,
     `Don't stop to show a draft: check the draft yourself (snapshots), fix problems, then render the finals.`,
     ``,
@@ -108,9 +116,11 @@ function jobInstructions(job) {
     `When finished, write \`${d}/results.json\` (paths relative to the kit folder):`,
     '```json',
     `{"reels": [{"title": "...", "file": "video-projects/<name>/renders/<file>.mp4", "post": "video-projects/<name>/POST.md",`,
-    `  "hook": "the hook text on screen", "length": "0:42", "variants": []}],`,
+    `  "hook": "the hook text on screen", "length": "0:42",`,
+    `  "variants": ["video-projects/<name>/renders/<name> - v2-question.mp4"]}],`,
     ` "message": "2-3 short friendly sentences for them"}`,
     '```',
+    `"variants" = the hook-test MP4 FILE PATHS (strings, relative to the kit folder), or [] if none. Not objects.`,
     `Then set status.json to step "Done", percent 100, and tell them in one line: "All done: go back to the dashboard to watch and download your reels."`,
     `Never post anything online. Stay inside this kit folder.`,
   ].filter((l) => l !== null).join('\n');
@@ -157,7 +167,9 @@ function jobView(id) {
   if (results?.reels) for (const r of results.reels) {
     const post = inKit(r.post); r.postText = post && existsSync(post) ? readFileSync(post, 'utf8') : null;
     const f = inKit(r.file); r.exists = !!(f && existsSync(f));
-    r.variants = (r.variants || []).filter((v) => { const vf = inKit(v); return vf && existsSync(vf); });
+    // variants: file paths (or, from older jobs, objects with a "file" field)
+    r.variants = (Array.isArray(r.variants) ? r.variants : []).map((v) => (typeof v === 'string' ? v : v?.file))
+      .filter((v) => { const vf = typeof v === 'string' && inKit(v); return vf && existsSync(vf); });
   }
   let state = j.state;
   if (state === 'sent' && status?.step && status.step !== 'Waiting for Claude') state = 'working';
@@ -183,13 +195,15 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && p === '/brand/logo') { const b = brandView(); return serveFile(req, res, b.logo && inKit(join('brand', b.logo))); }
 
     if (req.method === 'GET' && p === '/api/state') {
-      const jobs = readdirSync(JOBS).filter((d) => existsSync(jobFile(d))).map(jobView).filter(Boolean)
+      // one broken job file must never empty the whole list
+      const safeView = (d) => { try { return jobView(d); } catch (e) { console.error(`job ${d}: ${e.message}`); return null; } };
+      const jobs = readdirSync(JOBS).filter((d) => existsSync(jobFile(d))).map(safeView).filter(Boolean)
         .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       const music = Object.fromEntries(['upbeat', 'inspiring', 'calm', 'emotional'].map((m) => {
         const dir = join(KIT, 'brand', 'music', m);
         return [m, existsSync(dir) ? readdirSync(dir).filter((f) => /\.(mp3|wav|m4a)$/i.test(f)).length : 0];
       }));
-      return send(res, 200, { brand: brandView(), jobs, music, platform: platform(), kitFolder: KIT, kitName: basename(KIT) });
+      return send(res, 200, { brand: brandView(), library: libItems(), jobs, music, platform: platform(), kitFolder: KIT, kitName: basename(KIT) });
     }
 
     if (req.method === 'POST' && p === '/api/brand') {
@@ -297,6 +311,27 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === 'GET' && p === '/file') return serveFile(req, res, inKit(url.searchParams.get('path')), url.searchParams.get('dl') === '1');
+    if (req.method === 'POST' && p === '/api/library') {
+      const name = basename(url.searchParams.get('name') || 'file').replace(/[^\w.\- ]/g, '_');
+      if (!/\.(png|jpe?g|webp|gif|mp4|mov|m4v)$/i.test(name)) return send(res, 400, { error: 'Please use a picture (PNG or JPG) or a video (MP4 or MOV).' });
+      mkdirSync(LIB, { recursive: true });
+      const file = `${Date.now().toString(36)}-${name.replace(/\s+/g, '-')}`;
+      await saveUpload(req, join(LIB, file));
+      const items = libItems();
+      items.unshift({ file, name, type: /\.(mp4|mov|m4v)$/i.test(name) ? 'clip' : 'picture', note: '', added: Date.now() });
+      writeJSON(LIBJSON, items); return send(res, 200, { library: items });
+    }
+    if (req.method === 'POST' && p === '/api/library/update') {
+      const { file, note } = await readBody(req), items = libItems(), it = items.find((x) => x.file === file);
+      if (!it) return send(res, 404, { error: 'not found' });
+      it.note = String(note || '').slice(0, 400); writeJSON(LIBJSON, items); return send(res, 200, { library: items });
+    }
+    if (req.method === 'POST' && p === '/api/library/delete') {
+      const { file } = await readBody(req), items = libItems().filter((x) => x.file !== file);
+      const fp = join(LIB, basename(file || '')); if (file && existsSync(fp)) rmSync(fp);
+      writeJSON(LIBJSON, items); return send(res, 200, { library: items });
+    }
+    if (req.method === 'POST' && p === '/api/open-library') { mkdirSync(LIB, { recursive: true }); openInOS(LIB); return send(res, 200, { ok: true }); }
     if (req.method === 'POST' && p === '/api/open-music') { openInOS(join(KIT, 'brand', 'music')); return send(res, 200, { ok: true }); }
     if (req.method === 'POST' && p === '/api/open-kit') { openInOS(KIT); return send(res, 200, { ok: true }); }
     return send(res, 404, { error: 'not found' });

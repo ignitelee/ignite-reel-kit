@@ -10,6 +10,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { resolve, join, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const proj = resolve(process.argv[2] || '.');
 const cfgPath = join(proj, 'reel.json');
@@ -29,6 +30,14 @@ const BRAND = existsSync(brandFile) ? JSON.parse(readFileSync(brandFile, 'utf8')
 const W = 1080, H = 1920, TEAL = (BRAND.accent_color || '#13e6ba').toLowerCase();
 const layout = (cfg.layout || 'B').toUpperCase();
 const P = (p) => join(proj, p);
+// real brand logos (Simple Icons, CC0): slug -> brand colour
+const KIT_ROOT = resolve(fileURLToPath(import.meta.url), '../..');
+const SI_HEX = (() => {
+  const f = join(KIT_ROOT, 'node_modules/simple-icons/data/simple-icons.json');
+  if (!existsSync(f)) return {};
+  const d = JSON.parse(readFileSync(f, 'utf8'));
+  return Object.fromEntries((Array.isArray(d) ? d : d.icons).map((i) => [i.slug || i.title.toLowerCase().replace(/[^a-z0-9]/g, ''), i.hex]));
+})();
 
 // ---------- media ----------
 const probe = (f) => JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-show_entries',
@@ -90,7 +99,8 @@ const r3 = (x) => Math.round(x * 1000) / 1000;
 const J = JSON.stringify;
 const html = [], js = [], audio = [];
 let track = 30;
-const sfxTracks = [20, 21, 22, 23, 24, 25].map((t) => ({ t, free: 0 }));
+// each SFX track keeps its busy intervals (SFX are added out of time order)
+const sfxTracks = [20, 21, 22, 23, 24, 25, 26, 27].map((t) => ({ t, busy: [] }));
 const SFX = { whoosh: 'whoosh_soft.wav', pop: 'pop.wav', tick: 'tick.wav', hit: 'logo_hit.wav' };
 const sfxVol = cfg.sfx_volume ?? 0.35;
 let sfxN = 0;
@@ -98,8 +108,9 @@ function sfx(name, t) {
   if (!name || cfg.sfx === false) return;
   const file = SFX[name] || name;
   const d = 1.2, st = Math.max(0, r3(t));
-  const tr = sfxTracks.find((x) => x.free <= st) || sfxTracks[0];
-  tr.free = st + d;
+  const en = st + d, tr = sfxTracks.find((x) => !x.busy.some(([a, b]) => st < b && en > a));
+  if (!tr) return; // too many at once: skip this one
+  tr.busy.push([st, en]);
   audio.push(`<audio id="sfx${++sfxN}" data-start="${st}" data-duration="${Math.min(d, DUR - st).toFixed(3)}" data-track-index="${tr.t}" src="assets/brand/sfx/${file}" data-volume="${sfxVol}"></audio>`);
 }
 const tw = (sel, from, to, t) => js.push(`tl.fromTo(${J(sel)},${J(from)},${J(to)},${r3(t)});`);
@@ -118,6 +129,8 @@ const fadeOut = (sel, t, d = 0.3) => to(sel, { opacity: 0, y: -12, duration: d, 
 const HAS_HEADER = !!(cfg.header && (cfg.header.lines?.length || cfg.header.accent));
 const HEADER_H = HAS_HEADER ? cfg.header.height ?? 236 : 0;
 const BAND = { x: 0, y: cfg.band_y ?? 650, w: 1080, h: 608 };
+// split-screen panel for the speaker (layout B): top part of the frame, rounded
+const SPLIT = { x: 40, y: (HEADER_H || 0) + (cfg.split_top ?? 150), w: W - 80, h: cfg.split_h ?? 780, r: 46 };
 const CAP_Y = cfg.captions?.y ?? (layout === 'A' ? BAND.y + BAND.h - 28 : 1150);
 // while a big card is up the captions slide down to here (centre line), out of the graphic's way
 const CARD_CAP_Y = cfg.captions?.card_y ?? 1560;
@@ -137,6 +150,8 @@ const POS = layout === 'A' ? {
   low: { x: 70, y: CAP_Y + 120, w: 940, h: 1640 - CAP_Y - 120, panel: true },
   'low-clear': { x: 90, y: CAP_Y + 120, w: 900, h: 1640 - CAP_Y - 120 },
   card: { x: 0, y: HEADER_H, w: W, h: H - HEADER_H, card: true, dir: 'column', k: 1.45, cy: HEADER_H + (HEADER_H ? 70 : 170), ch: CARD_CAP_Y - 110 - HEADER_H - (HEADER_H ? 70 : 170) },
+  // split screen: the speaker glides into a rounded panel at the top, the graphic builds in the bottom half
+  split: { x: 40, y: SPLIT.y + SPLIT.h + 40, w: W - 80, h: H - (SPLIT.y + SPLIT.h + 40) - 110, split: true, dir: 'column', k: 1.3, cy: SPLIT.y + SPLIT.h + 60, ch: H - (SPLIT.y + SPLIT.h + 60) - 150 },
 };
 if (layout === 'B') { POS.left = POS['side-left']; POS.right = POS['side-right']; }
 
@@ -172,7 +187,7 @@ const pops = (cfg.popups || []).map((p, i) => {
   if (!pos) throw new Error(`popup ${i + 1}: unknown pos "${p.pos}" (have: ${Object.keys(POS).join(', ')})`);
   anchorFrom = 0;
   const a = anchor(p.at, `popup ${i + 1}`);
-  const lead = p.lead ?? (pos.side ? 0.4 : pos.card ? 0.15 : 0.12);
+  const lead = p.lead ?? (pos.side ? 0.4 : pos.split ? 0.45 : pos.card ? 0.15 : 0.12);
   const t0 = Math.max(0, a.start - lead);
   anchorFrom = a.start - 0.01; // "until" = the next time those words are said
   let end = p.until !== undefined ? anchor(p.until, `popup ${i + 1} until`).end + (p.hold ?? 0.45) : t0 + (p.dur ?? 2.6);
@@ -197,7 +212,35 @@ glides.forEach((g, k) => {
   // back to centre, unless another side graphic follows within 1.4 s (then glide straight across)
   if (g.e < DUR - 0.3 && !(next && next.s - g.e < 1.4)) to('#reframe', { x: 0, scale: 1, duration: 0.7, ease: 'power3.inOut' }, g.e);
 });
-const moveTimes = glides.flatMap((g) => [g.s, g.e]);
+// split screen runs: merge split graphics that follow each other
+const splits = [];
+for (const g of pops.filter((x) => x.pos.split).sort((a, b) => a.t0 - b.t0)) {
+  const s0 = Math.max(0, g.t0 - 0.1), e0 = Math.min(DUR, g.end), last = splits[splits.length - 1];
+  if (last && s0 - last.e < 1.5) last.e = Math.max(last.e, e0); else splits.push({ s: s0, e: e0 });
+}
+if (splits.length) {
+  // where the face sits in the panel; keep the panel fully covered by the video
+  const sc = cfg.split_scale ?? 1;
+  const edge = (o, a) => o + (a - o) * sc;
+  const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
+  const dx = r3(clamp(SPLIT.x + SPLIT.w / 2 - cam.ox, SPLIT.x + SPLIT.w - edge(cam.ox, cam.L + cam.VW), SPLIT.x - edge(cam.ox, cam.L)));
+  const dy = r3(clamp(SPLIT.y + SPLIT.h * (cfg.split_face_y ?? 0.42) - cam.oy, SPLIT.y + SPLIT.h - edge(cam.oy, cam.T + cam.VH), SPLIT.y - edge(cam.oy, cam.T)));
+  const ins = `inset(${SPLIT.y}px ${W - SPLIT.x - SPLIT.w}px ${H - SPLIT.y - SPLIT.h}px ${SPLIT.x}px round ${SPLIT.r}px)`;
+  js.push(`gsap.set('#camclip',{clipPath:'inset(0px 0px 0px 0px round 0px)'});gsap.set('#splitcam',{transformOrigin:'${r3(cam.ox)}px ${r3(cam.oy)}px',x:0,y:0,scale:1});gsap.set('#splitbg',{opacity:0});`);
+  for (const r of splits) {
+    to('#camclip', { clipPath: ins, duration: 0.6, ease: 'power3.inOut' }, r.s);
+    to('#splitcam', { x: dx, y: dy, scale: sc, duration: 0.6, ease: 'power3.inOut' }, r.s);
+    to('#splitbg', { opacity: 1, duration: 0.4, ease: 'power1.out' }, r.s);
+    tw('#splitbg .cgrid', { x: 0, y: 0 }, { x: -64, y: -32, duration: r3(r.e - r.s), ease: 'none' }, r.s);
+    sfx('whoosh', r.s);
+    if (r.e < DUR - 0.3) {
+      to('#camclip', { clipPath: 'inset(0px 0px 0px 0px round 0px)', duration: 0.55, ease: 'power3.inOut' }, r.e - 0.1);
+      to('#splitcam', { x: 0, y: 0, scale: 1, duration: 0.55, ease: 'power3.inOut' }, r.e - 0.1);
+      to('#splitbg', { opacity: 0, duration: 0.3 }, r.e + 0.15);
+    }
+  }
+}
+const moveTimes = [...glides.flatMap((g) => [g.s, g.e]), ...splits.flatMap((r) => [r.s, r.e])];
 
 // punch-ins on cuts: [{at, scale}] or {"auto": true, "edl": "...", "scales": [1, 1.12], "min_hold": 4, "style": "mix"}
 const punches = [];
@@ -235,8 +278,9 @@ punches.forEach((p, k) => {
   else js.push(`tl.set('#camwrap',{scale:${s}},${r3(p.t)});`);
 });
 
-html.push(`<div id="camclip" style="position:absolute;overflow:hidden;${cam.css}"><div id="reframe" style="position:absolute;inset:0"><div id="zoom" style="position:absolute;inset:0"><div id="camwrap" style="position:absolute;inset:0">
-  <video id="cam" style="position:absolute;${cfg.mirror ? 'transform:scaleX(-1);' : ''}left:${r3(cam.L)}px;top:${r3(cam.T)}px;width:${r3(cam.VW)}px;height:${r3(cam.VH)}px" data-start="0" data-duration="${VDUR}" data-track-index="0" src="${cfg.video}" muted playsinline></video></div></div></div></div>`);
+if (splits.length) html.push(`<div id="splitbg" class="clip" data-start="0" data-duration="${DUR}" data-track-index="8" style="position:absolute;inset:0;overflow:hidden;background:#05080a"><div class="cgrid"></div><div class="cglow"></div></div>`);
+html.push(`<div id="camclip" style="position:absolute;overflow:hidden;${cam.css}"><div id="splitcam" style="position:absolute;inset:0"><div id="reframe" style="position:absolute;inset:0"><div id="zoom" style="position:absolute;inset:0"><div id="camwrap" style="position:absolute;inset:0">
+  <video id="cam" style="position:absolute;${cfg.mirror ? 'transform:scaleX(-1);' : ''}left:${r3(cam.L)}px;top:${r3(cam.T)}px;width:${r3(cam.VW)}px;height:${r3(cam.VH)}px" data-start="0" data-duration="${VDUR}" data-track-index="0" src="${cfg.video}" muted playsinline></video></div></div></div></div></div>`);
 audio.push(`<audio id="voice" data-start="0" data-duration="${VDUR}" data-track-index="1" src="${cfg.video}" data-volume="${cfg.voice_volume ?? 1}"></audio>`);
 
 // ---------- music bed (pre-mixed with ffmpeg, level relative to the voice) ----------
@@ -431,11 +475,22 @@ for (const g of pops) {
     tw(`#${id}-vw`, { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.5, ease: 'power3.inOut' }, t0);
     to(`#${id}-vw`, { clipPath: 'inset(0% 0% 0% 100%)', duration: 0.45, ease: 'power3.inOut' }, end - 0.45);
     if (p.text) { inner = `<div class="cliptext" style="font-size:${56 * sz}px">${rich(p.text)}</div>`; enter(`#${id} .cliptext`, t0 + 0.4); }
+    // slow drift so stock footage never looks static ("zoom": false to turn off)
+    if (p.zoom !== false) tw(`#${id}-v`, { scale: 1 }, { scale: p.zoom_to ?? 1.08, duration: r3(end - t0), ease: 'none' }, t0);
     sfx('whoosh', t0);
   } else if (p.type === 'glass') {
     // frosted (smoked) glass cards over the video: real logos, a number, roles that get crossed out
-    const al = p.align || (pos.x + pos.w / 2 > W / 2 ? 'right' : 'left');
+    const al = p.align || (pos.split || pos.card ? 'center' : pos.x + pos.w / 2 > W / 2 ? 'right' : 'left');
     const logoHtml = (it) => {
+      // "si:<slug>" = real brand logo from the bundled Simple Icons library (npm run logo -- <brand>)
+      if (it.logo?.startsWith('si:')) {
+        const slug = it.logo.slice(3), f = join(KIT_ROOT, 'node_modules/simple-icons/icons', `${slug}.svg`);
+        if (!existsSync(f)) throw new Error(`${L}: no logo "${slug}" (find one with: npm run logo -- <brand>)`);
+        const hex = '#' + (SI_HEX[slug] || '222222'), lum = parseInt(hex.slice(1, 3), 16) * 0.3 + parseInt(hex.slice(3, 5), 16) * 0.59 + parseInt(hex.slice(5, 7), 16) * 0.11;
+        const fg = it.color || (lum > 170 ? '#111111' : '#ffffff');
+        const svg = readFileSync(f, 'utf8').replace(/<title>[^<]*<\/title>/, '').replace('<svg ', `<svg fill="${fg}" width="${r3(46 * sz)}" height="${r3(46 * sz)}" `);
+        return `<span class="glogo brand" style="background:${it.bg || hex}">${svg}</span>`;
+      }
       if (!it.logo) return `<span class="glogo ig-icon" style="font-size:${r3(40 * sz)}px;color:${it.color || TEAL};background:${it.bg || 'rgba(255,255,255,.10)'}">${icon(it.icon || 'bolt')}</span>`;
       if (it.logo.endsWith('.svg')) {
         const svg = readFileSync(P(it.logo), 'utf8').replace(/<title>[^<]*<\/title>/, '').replace('<svg ', `<svg fill="${it.color || '#ffffff'}" width="${r3(44 * sz)}" height="${r3(44 * sz)}" `);
@@ -444,12 +499,13 @@ for (const g of pops) {
       return `<span class="glogo" style="background:${it.bg || '#fff'}"><img src="${esc(it.logo)}" style="width:${r3(44 * sz)}px;height:${r3(44 * sz)}px;object-fit:contain"></span>`;
     };
     const crossOf = (it) => it.cross_at ?? p.cross_at;
-    inner = `<div class="gstack ${al}">${p.label ? `<div class="glabel" style="font-size:${r3(26 * sz)}px">${esc(p.label)}</div>` : ''}` +
-      p.items.map((it, k) => `<div class="gcard gc${k}" style="font-size:${r3(38 * sz)}px">${logoHtml(it)}<div class="gtx"><div class="gt">${rich(it.title)}${crossOf(it) !== undefined ? '<i class="strike"></i>' : ''}</div>${it.sub ? `<div class="gs" style="font-size:${r3(24 * sz)}px">${rich(it.sub)}</div>` : ''}</div>${crossOf(it) !== undefined ? `<span class="gx ig-icon">${icon('close')}</span>` : ''}</div>`).join('') + `</div>`;
+    inner = `<div class="gstack ${al}${p.row ? ' row' : ''}">${p.label ? `<div class="glabel" style="font-size:${r3(26 * sz)}px">${esc(p.label)}</div>` : ''}` +
+      p.items.map((it, k) => `<div class="gcard gc${k}" style="font-size:${r3(38 * sz)}px"><i class="sheen"></i>${logoHtml(it)}<div class="gtx"><div class="gt">${rich(it.title)}${crossOf(it) !== undefined ? '<i class="strike"></i>' : ''}</div>${it.sub ? `<div class="gs" style="font-size:${r3(24 * sz)}px">${rich(it.sub)}</div>` : ''}</div>${crossOf(it) !== undefined ? `<span class="gx ig-icon">${icon('close')}</span>` : ''}</div>`).join('') + `</div>`;
     if (p.label) enter(`#${id} .glabel`, t0, { y: 12, d: 0.35 });
     p.items.forEach((it, k) => {
       const ti = Math.max(tAt(it.at, `${L} item ${k + 1}`, t0 + 0.1 + k * 0.4), t0);
-      tw(`#${id} .gc${k}`, { opacity: 0, x: al === 'right' ? 70 : -70, scale: 0.9, filter: 'blur(8px)' }, { opacity: 1, x: 0, scale: 1, filter: 'blur(0px)', duration: 0.55, ease: 'power3.out' }, ti);
+      tw(`#${id} .gc${k}`, { opacity: 0, x: al === 'right' ? 70 : al === 'center' ? 0 : -70, y: al === 'center' ? 40 : 0, scale: 0.9, filter: 'blur(8px)' }, { opacity: 1, x: 0, y: 0, scale: 1, filter: 'blur(0px)', duration: 0.55, ease: 'power3.out' }, ti);
+      tw(`#${id} .gc${k} .sheen`, { xPercent: 0 }, { xPercent: 560, duration: 0.9, ease: 'power2.inOut' }, ti + 0.25); // light catching the glass
       sfx('pop', ti);
       if (crossOf(it) !== undefined) {
         const tc = anchor(crossOf(it), `${L} cross`).start + (it.cross_at === undefined ? k * 0.18 : 0);
@@ -534,7 +590,7 @@ for (const g of pops) {
 
   const core = usePanel ? `<div class="panel">${inner}</div>` : ['phone', 'glass', 'beforeafter'].includes(p.type) ? inner : `<div class="pin">${inner}</div>`;
   const body = pos.card ? `<div class="cgrid"></div><div class="cglow"></div>${core}` : core;
-  const cardPad = pos.card && pos.cy !== undefined ? `;padding:${pos.cy - pos.y}px 70px ${pos.y + pos.h - pos.cy - pos.ch}px;justify-content:center` : '';
+  const cardPad = (pos.card || pos.split) && pos.cy !== undefined ? `;padding:${pos.cy - pos.y}px 70px ${pos.y + pos.h - pos.cy - pos.ch}px;justify-content:center` : '';
   if (p.type !== 'clip' || p.text) html.push(`<div id="${id}" class="clip ${cls}" data-start="${r3(t0)}" data-duration="${r3(end - t0)}" data-track-index="${track++}" style="${box}${cardPad}">${body}</div>`);
   html.push(...after);
   // container transitions
@@ -565,10 +621,18 @@ const capHtml = [];
     const last = runs[runs.length - 1];
     if (last && g.t0 - last.e < 1.0) last.e = Math.max(last.e, g.end); else runs.push({ s: g.t0, e: g.end });
   }
-  for (const r of runs) {
-    to('#caps', { y: capDy, duration: 0.45, ease: 'power3.inOut' }, r.s);
-    if (r.e < DUR - 0.3) to('#caps', { y: 0, duration: 0.45, ease: 'power3.inOut' }, r.e - 0.35);
-  }
+  // one schedule for where the captions sit (normal / under a big card / inside the split panel), so
+  // moves never fight each other; back-to-back zones go straight from one position to the next
+  const splitCapDy = (cfg.captions?.split_y ?? SPLIT.y + SPLIT.h - 90) - CAP_Y;
+  const zones = [...runs.map((r) => ({ ...r, y: capDy })), ...splits.map((r) => ({ ...r, y: splitCapDy }))].sort((x, y) => x.s - y.s);
+  let cur = 0;
+  zones.forEach((z, k) => {
+    if (z.y !== cur) { to('#caps', { y: z.y, duration: 0.45, ease: 'power3.inOut' }, z.s); cur = z.y; }
+    const next = zones[k + 1];
+    if (next && next.s - z.e < 1.0) return; // the next zone takes over
+    // split: wait until the graphic has faded (it fades over its last 0.3 s) before the captions slide back
+    if (z.e < DUR - 0.3) { to('#caps', { y: 0, duration: 0.45, ease: 'power3.inOut' }, z.y === splitCapDy ? z.e - 0.1 : z.e - 0.35); cur = 0; }
+  });
 }
 const cap = cfg.captions || {};
 if (cap.on !== false) {
@@ -638,6 +702,7 @@ const css = `*{box-sizing:border-box}html,body{margin:0;width:${W}px;height:${H}
 .cglow{position:absolute;inset:0;background:radial-gradient(ellipse 70% 55% at 50% 40%,rgba(19,230,186,.16),rgba(19,230,186,0) 70%),radial-gradient(ellipse 120% 90% at 50% 50%,rgba(0,0,0,0) 55%,rgba(0,0,0,.75) 100%)}
 .pop.card .pin,.pop.card .panel{position:relative}
 .pop.card .pin{display:flex;flex-direction:column;align-items:center}
+.pop.split{z-index:12;flex-direction:column}.pop.split .pin{display:flex;flex-direction:column;align-items:center}.pop.split .plabel{justify-content:center}.pop.split .ptitle{text-align:center}
 .lis{display:flex;flex-direction:column;align-items:flex-start}.pop.card .lis{display:inline-flex}
 .panel{position:relative;width:100%;text-align:left;background:linear-gradient(165deg,rgba(26,52,48,.88),rgba(6,14,13,.92) 62%);border:1px solid rgba(255,255,255,.10);border-radius:34px;padding:36px 38px 38px;box-shadow:0 30px 80px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08);backdrop-filter:blur(16px)}
 .panel::before{content:"";position:absolute;left:38px;top:-1px;width:86px;height:5px;border-radius:0 0 5px 5px;background:var(--ig-teal);box-shadow:0 0 20px rgba(19,230,186,.75)}
@@ -679,9 +744,12 @@ const css = `*{box-sizing:border-box}html,body{margin:0;width:${W}px;height:${H}
 .clipv{position:absolute;z-index:16;overflow:hidden;clip-path:inset(0% 100% 0% 0%)}
 .cliptext{font-weight:800;text-shadow:0 4px 30px rgba(0,0,0,.8)}
 .hlline{font-weight:700;line-height:1.2}.pimg{border-radius:28px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
-.gstack{display:flex;flex-direction:column;gap:18px;width:100%}.gstack.right{align-items:flex-end}.gstack.left{align-items:flex-start}.gstack.center{align-items:center}
+.gstack{display:flex;flex-direction:column;gap:18px;width:100%}.gstack.right{align-items:flex-end}.gstack.left{align-items:flex-start}.gstack.center{align-items:center}.gstack.row{flex-direction:row;flex-wrap:wrap;justify-content:center;align-items:center}.gstack.row .glabel{width:100%;text-align:center}
 .glabel{font-weight:800;letter-spacing:3px;text-transform:uppercase;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.6);padding:0 6px}
-.gcard{position:relative;display:flex;align-items:center;gap:18px;max-width:100%;padding:16px 28px 16px 16px;border-radius:26px;background:linear-gradient(135deg,rgba(255,255,255,.22),rgba(255,255,255,.05)),rgba(14,18,20,.42);border:1.5px solid rgba(255,255,255,.34);box-shadow:0 22px 50px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.4);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);color:#fff}
+.gcard{position:relative;display:flex;align-items:center;gap:18px;max-width:100%;padding:16px 30px 16px 16px;border-radius:30px;overflow:hidden;background:linear-gradient(160deg,rgba(255,255,255,.24),rgba(255,255,255,.05) 42%,rgba(255,255,255,.02) 60%,rgba(255,255,255,.12)),rgba(18,22,26,.30);border:1px solid rgba(255,255,255,.22);box-shadow:0 26px 60px rgba(0,0,0,.38),0 2px 6px rgba(0,0,0,.25),inset 0 1.5px 0 rgba(255,255,255,.70),inset 0 -1px 0 rgba(255,255,255,.16),inset 0 0 26px rgba(255,255,255,.07);backdrop-filter:blur(26px) saturate(190%) brightness(1.08);-webkit-backdrop-filter:blur(26px) saturate(190%) brightness(1.08);color:#fff}
+.gcard::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.6px;background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(255,255,255,.10) 32%,rgba(255,255,255,.04) 62%,rgba(255,255,255,.6));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.gcard .sheen{position:absolute;top:-30%;bottom:-30%;width:38%;left:-70%;background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,255,255,.38),rgba(255,255,255,0));transform:skewX(-18deg);pointer-events:none}
+.glogo.brand{box-shadow:inset 0 0 0 1px rgba(255,255,255,.18),0 6px 16px rgba(0,0,0,.35)}
 .glogo{flex:none;width:1.9em;height:1.9em;border-radius:.5em;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
 .gt{position:relative;font-weight:800;line-height:1.08}.gs{font-weight:500;opacity:.82;margin-top:4px}.gtx{min-width:0}
 .gx{position:absolute;right:-14px;top:-14px;width:46px;height:46px;border-radius:50%;background:#ff4d5e;color:#fff;font-size:30px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(255,77,94,.5);opacity:0}

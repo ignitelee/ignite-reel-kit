@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 let errors = 0;
 const fail = message => { console.error(message); errors++; };
-const ignore = new Set(['node_modules', '.git', 'video-projects', 'raw-media', 'tmp', 'archives', 'renders', 'jobs', '_captures', 'user']);
+const ignore = new Set(['node_modules', '.git', 'video-projects', 'raw-media', 'tmp', 'archives', 'renders', 'jobs', '_captures', 'user', 'my-library']);
 function walk(dir) { return readdirSync(dir, { withFileTypes: true }).flatMap(e => ignore.has(e.name) || e.name === '.env' ? [] : e.isDirectory() ? walk(join(dir,e.name)) : [join(dir,e.name)]); }
 const files = walk(root);
 // Explicitly approved public exports; other media remains excluded.
@@ -18,7 +18,7 @@ const publicMedia = new Set([
   // IGNITE Reel Kit: our own sound effects are made for this kit and free to share
   'brand/sfx/logo_hit.wav', 'brand/sfx/pop.wav', 'brand/sfx/tick.wav', 'brand/sfx/whoosh_soft.wav',
   // IGNITE Hub B-roll (demo account, demo figures), approved by IGNITE for its IBs
-  'library/hub/education.mp4', 'library/hub/sparkie.mp4', 'library/hub/dashboard.mp4', 'library/hub/trades.mp4', 'library/hub/sparkie-review.mp4', 'library/hub/calendar.mp4',
+  'library/hub/education.mp4', 'library/hub/sparkie.mp4', 'library/hub/dashboard.mp4', 'library/hub/trades.mp4', 'library/hub/sparkie-review.mp4', 'library/hub/calendar.mp4', 'library/hub/edge-panel.mp4', 'library/hub/edge-chart.mp4', 'library/hub/onboarding.mp4',
 ]);
 if (!readFileSync(join(root,'AGENTS.md')).equals(readFileSync(join(root,'CLAUDE.md')))) fail('Root instruction files differ');
 const sync = spawnSync(process.execPath, [join(root,'scripts/sync-codex-skills.mjs'),'--check'], {encoding:'utf8'});

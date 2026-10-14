@@ -77,10 +77,20 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .pill.done{color:var(--good);border-color:#1f5a43}
 .pill.working{color:var(--accent)}
 .pill.wait{color:var(--warn)}
-.reels{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;margin-top:14px}
-.reel{background:var(--panel2);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.reels{display:grid;gap:16px;margin-top:14px}
+.reel{background:var(--panel2);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;align-items:flex-start}
+.reel .side{width:280px;flex:none;position:sticky;top:80px}
 .reel video{width:100%;aspect-ratio:9/16;background:#000;display:block}
-.reel .body{padding:12px 14px;display:flex;flex-direction:column;gap:10px;flex:1}
+.reel .body{padding:14px 16px;display:flex;flex-direction:column;gap:12px;flex:1;min-width:0}
+.capbox{background:#0b0f17;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.capbox .hd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.capbox .hd b{font-size:14px;letter-spacing:.3px}
+.capbox .txt{white-space:pre-wrap;word-break:break-word;font-size:15px;line-height:1.55}
+.capbox .txt.collapsed{max-height:9.5em;overflow:hidden;-webkit-mask-image:linear-gradient(#000 60%,transparent);mask-image:linear-gradient(#000 60%,transparent)}
+.capbox .more{background:none;border:0;color:var(--accent);font-weight:700;padding:6px 0 0;font-size:14px}
+.capbox.hook{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.secttl{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:6px 0 -4px}
+@media (max-width:700px){.reel{flex-direction:column}.reel .side{width:100%;position:static}}
 .reel h3{margin:0;font-size:16px}
 .capt{display:flex;flex-wrap:wrap;gap:6px}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--accent);color:#04110d;font-weight:800;padding:12px 20px;border-radius:12px;z-index:99;display:none}
@@ -100,6 +110,7 @@ details summary{cursor:pointer;font-weight:700}
   <nav>
     <button data-tab="make" class="on">Make reels</button>
     <button data-tab="mine">My reels</button>
+    <button data-tab="lib">My library</button>
     <button data-tab="brand">My brand</button>
     <button data-tab="help">Help</button>
   </nav>
@@ -222,6 +233,21 @@ details summary{cursor:pointer;font-weight:700}
         </div>
       </div>
       <div class="opt">
+        <label class="t">Stock footage <i class="tip">i<span class="tt">Short free video clips (for example a pub, a beach, a gym or a laptop) shown for a couple of seconds when you describe something, while your voice carries on. It gives the reel a different feel. Claude only adds 1 to 3, never during personal moments. Needs a free Pexels key (set up once; ask Claude "turn on stock footage").</span></i></label>
+        <div class="chips" data-group="broll">
+          <button class="chip on" data-v="some">A little</button>
+          <button class="chip" data-v="none">None</button>
+        </div>
+      </div>
+      <div class="opt">
+        <label class="t">Show my logo <i class="tip">i<span class="tt">Your logo sits small in the top corner. "Auto" shows it only when the video is about your business or trading, and leaves it off personal and lifestyle videos, where it adds nothing. Or choose Always / Never.</span></i></label>
+        <div class="chips" data-group="logo">
+          <button class="chip on" data-v="auto">Auto</button>
+          <button class="chip" data-v="always">Always</button>
+          <button class="chip" data-v="never">Never</button>
+        </div>
+      </div>
+      <div class="opt">
         <label class="t">Anything else? (optional) <i class="tip">i<span class="tt">Tell Claude anything in normal words. For example: "Make the hook about saving time", "Cut the bit where I cough", or "Don't use the part about prices". Leave it empty if you have nothing to add.</span></i></label>
         <textarea id="notes" placeholder="e.g. Start with the line about my first month"></textarea>
       </div>
@@ -273,6 +299,27 @@ details summary{cursor:pointer;font-weight:700}
   <h1>My reels</h1>
   <p class="sub">Every video you've sent to Claude, newest first. Watch, download and copy your captions here.</p>
   <div id="jobs"></div>
+</section>
+
+<!-- ============ MY LIBRARY ============ -->
+<section id="tab-lib" class="hidden">
+  <h1>My library</h1>
+  <p class="sub">Your own photos and clips, saved once and reused in your reels. It's what makes your reels look like YOU instead of everyone else.</p>
+  <div class="card">
+    <h2>How it works <i class="tip">i<span class="tt">Everything here stays on your computer and is kept when the kit updates. Claude looks through your library on every reel and uses what fits what you're saying, before any stock footage.</span></i></h2>
+    <ol class="small" style="margin:8px 0 0;padding-left:20px;line-height:1.8">
+      <li><b>Add your pictures and clips:</b> you at work, your car, your office, the gym, family, your team, your results, places you go, your own B-roll.</li>
+      <li><b>Write a short note</b> on each one (optional): what it is and when to use it, e.g. "me at the gym, use when I talk about discipline".</li>
+      <li><b>That's it.</b> Next time you make a reel, Claude uses the ones that fit. No note? Claude looks at it to see what it shows.</li>
+    </ol>
+    <div class="row" style="margin-top:14px">
+      <label class="btn" for="libFile" style="display:inline-block">+ Add pictures or clips</label>
+      <input id="libFile" type="file" multiple accept="image/png,image/jpeg,image/webp,video/mp4,video/quicktime,.mov,.m4v" class="hidden">
+      <button class="btn ghost small" style="padding:10px 14px" onclick="post('/api/open-library')">Open the folder</button>
+      <span id="libCount" class="small muted"></span>
+    </div>
+  </div>
+  <div id="libGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px"></div>
 </section>
 
 <!-- ============ MY BRAND ============ -->
@@ -359,6 +406,8 @@ details summary{cursor:pointer;font-weight:700}
     <p><b>More videos of you talking</b> (you filmed it in parts): add the first in step 1, then press <b>+ Add another part of me talking</b> (up to 3 parts; film them in the same place with the same camera so the joins look natural). They're joined into one video in the order shown (use the arrows to change it).</p>
     <p><b>Anything you want SHOWN while you talk</b> (screenshots, photos, phone recordings, short clips): add up to 3 in <b>1b Extra pictures and clips</b>. For each one, choose <b>How</b> (beside you or full screen) and type <b>When</b> it should appear, e.g. "when I talk about my results". Not sure? Choose "Let Claude decide".</p>
     <p>Your <b>logo</b> doesn't go in either: it's in <b>My brand</b> and goes on every reel automatically.</p></details>
+  <details><summary>How do I make my reels look more like me?</summary>
+    <p>Use the <b>My library</b> tab. Add photos and clips of your life and work once (your car, office, gym, family, team, results, your own B-roll) with a short note on when to use each. Claude uses the ones that fit in every reel, before any stock footage. The notes are optional: without one, Claude looks at the picture to see what it shows.</p></details>
   <details><summary>Does it post to my Instagram or TikTok?</summary>
     <p>No. It never posts anything. You download the reel and post it yourself, with the caption from this page.</p></details>
   <details><summary>How do I open this page again?</summary>
@@ -567,6 +616,30 @@ function showJob(j) {
   $('#copyBtn').disabled = !j; $('#copyHint').textContent = j ? 'Then follow steps 2 to 6 above.' : 'Add your video in step 1 first.';
 }
 
+// my library
+function renderLib(items) {
+  const g = $('#libGrid'); if (g.contains(document.activeElement)) return;
+  $('#libCount').textContent = items.length ? `${items.length} item${items.length === 1 ? '' : 's'} in your library` : '';
+  g.innerHTML = items.length ? items.map((x) => {
+    const src = '/file?path=' + encodeURIComponent('brand/my-library/' + x.file), vid = x.type === 'clip';
+    const media = vid ? `<video src="${src}#t=0.5" muted preload="metadata" controls style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;background:#000"></video>`
+      : `<img src="${src}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;background:#000">`;
+    return `<div class="card" style="margin:0;padding:12px">${media}
+      <div class="small" style="margin:8px 0 4px"><b>${esc(x.name)}</b> <span class="muted">(${vid ? 'clip' : 'picture'})</span></div>
+      <textarea data-libnote="${esc(x.file)}" placeholder="What is it? When should it be used?" style="min-height:64px">${esc(x.note || '')}</textarea>
+      <button class="btn danger small" style="padding:6px 12px;margin-top:6px" data-libdel="${esc(x.file)}">Remove</button></div>`;
+  }).join('') : '<div class="card muted">Nothing here yet. Add a few photos or clips of your life and work: they will make your reels feel like you.</div>';
+  $$('[data-libnote]', g).forEach((t) => t.onblur = async () => { try { S.library = (await post('/api/library/update', { file: t.dataset.libnote, note: t.value })).library; toast('Saved.'); } catch (e) { alert(e.message); } });
+  $$('[data-libdel]', g).forEach((b) => b.onclick = async () => { if (!confirm('Remove this from your library?')) return; S.library = (await post('/api/library/delete', { file: b.dataset.libdel })).library; g.innerHTML = ''; renderLib(S.library); });
+}
+$('#libFile').onchange = async (e) => {
+  for (const f of e.target.files) {
+    try { S.library = (await sendFile('/api/library?name=' + encodeURIComponent(f.name), f, 'Adding ' + f.name)).library; renderLib(S.library); toast('Added ' + f.name); }
+    catch (err) { alert(err.message); break; }
+  }
+  e.target.value = '';
+};
+
 // step 3: prepare the job, copy the message
 $('#copyBtn').onclick = async () => {
   if (!currentId) return;
@@ -574,7 +647,7 @@ $('#copyBtn').onclick = async () => {
   if (!plats.length) { alert('Please tick at least one app in "Where will you post them?"'); return; }
   try {
     const j = await post(`/api/jobs/${currentId}/prepare`, { count: +$('#count').value, platforms: plats, captions: groupVal('captions') === 'true',
-      graphics: groupVal('graphics'), music: groupVal('music'), full: groupVal('full') === 'true', variants: +groupVal('variants') || 0, notes: $('#notes').value.trim(),
+      graphics: groupVal('graphics'), music: groupVal('music'), full: groupVal('full') === 'true', variants: +groupVal('variants') || 0, broll: groupVal('broll'), logo: groupVal('logo'), notes: $('#notes').value.trim(),
       extraNotes: Object.fromEntries($$('#extrasList input[data-x]').map((i) => [i.dataset.x, i.value.trim()])),
       extraRoles: Object.fromEntries($$('#extrasList select[data-r]').map((i) => [i.dataset.r, i.value])) });
     const ok = await copy(j.message);
@@ -596,6 +669,34 @@ function postSections(md) {
   for (const k in out) if (ig && k !== ig && /^same as instagram/i.test(out[k])) out[k] = out[ig];
   return out;
 }
+const openBoxes = new Set(); // which "Show more" boxes are open (kept across refreshes)
+const mdInline = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '$1');
+const plain = (t) => t.replace(/\*\*(.+?)\*\*/g, '$1').replace(/`([^`]+)`/g, '$1');
+function capBox(key, title, text, cls = '') {
+  const long = text.length > 420 || text.split('\n').length > 7, open = openBoxes.has(key);
+  return `<div class="capbox ${cls}"><div class="hd"><b>${esc(title)}</b>
+      <button class="btn ghost small" style="padding:6px 12px" data-copy="${esc(plain(text))}">Copy</button></div>
+    <div class="txt${long && !open ? ' collapsed' : ''}">${mdInline(text)}</div>
+    ${long ? `<button class="more" data-more="${esc(key)}">${open ? 'Show less' : 'Show more'}</button>` : ''}</div>`;
+}
+// everything in POST.md for one reel: hook + alternates, cover text, every platform caption, anything else
+function postHTML(jid, i, md) {
+  const sec = postSections(md), keys = Object.keys(sec).filter((k) => sec[k]);
+  if (!keys.length) return '';
+  const isHook = (k) => /hook/i.test(k), isCover = (k) => /cover/i.test(k);
+  const plat = (k) => /instagram|tiktok|facebook|youtube|shorts|pinned|linkedin|twitter|threads/i.test(k);
+  const key = (k) => `${jid}|${i}|${k}`;
+  let h = '';
+  const top = keys.filter((k) => isHook(k) || isCover(k));
+  if (top.length) h += `<div class="secttl">Hook and cover <i class="tip">i<span class="tt">The hook is the line on screen in the first 2 seconds. The alternates are other openings you could test. The cover text is the words to put on the reel's cover picture when you post it.</span></i></div>`
+    + top.map((k) => capBox(key(k), k, sec[k], 'hook')).join('');
+  const caps = keys.filter((k) => !isHook(k) && !isCover(k) && plat(k));
+  if (caps.length) h += `<div class="secttl">Your captions <i class="tip">i<span class="tt">Ready-written for each app, with hashtags. Press Copy, then paste it when you post the reel on that app.</span></i></div>`
+    + caps.map((k) => capBox(key(k), k, sec[k])).join('');
+  const other = keys.filter((k) => !top.includes(k) && !caps.includes(k));
+  if (other.length) h += `<div class="secttl">Also for this reel</div>` + other.map((k) => capBox(key(k), k, sec[k])).join('');
+  return h;
+}
 function jobHTML(j, big) {
   const [label, cls] = STATE[j.state] || [j.state, ''];
   const st = j.status || {}, pct = Math.max(0, Math.min(100, st.percent ?? 0));
@@ -612,15 +713,13 @@ function jobHTML(j, big) {
   if (reels.length) {
     if (j.results.message) h += `<div class="notice good">${esc(j.results.message)}</div>`;
     h += `<div class="reels">` + reels.map((r, i) => {
-      const sec = postSections(r.postText), caps = Object.keys(sec).filter((k) => /instagram|tiktok|facebook|youtube|pinned/i.test(k));
       const src = '/file?path=' + encodeURIComponent(r.file);
-      return `<div class="reel">${r.exists ? `<video src="${src}#t=0.6" controls preload="metadata" playsinline></video>` : `<div class="notice warn" style="margin:12px">This video file is missing.</div>`}
+      return `<div class="reel"><div class="side">${r.exists ? `<video src="${src}#t=0.6" controls preload="metadata" playsinline></video>` : `<div class="notice warn" style="margin:12px">This video file is missing.</div>`}</div>
         <div class="body"><h3>${esc(r.title || 'Reel ' + (i + 1))}</h3>
           ${r.hook ? `<div class="small"><span class="muted">Hook:</span> ${esc(r.hook)}</div>` : ''}${r.length ? `<div class="small muted">${esc(r.length)} long</div>` : ''}
           <div class="row"><a class="btn small" style="padding:9px 14px;text-decoration:none" href="${src}&dl=1">Download</a>
             <button class="btn ghost small" style="padding:9px 14px" data-open="${j.id}">Show in folder</button></div>
-          ${caps.length ? `<div><div class="small muted" style="margin-bottom:6px">Copy your caption <i class="tip">i<span class="tt">Each button copies the ready-written caption and hashtags for that app. Paste it when you post the reel.</span></i></div>
-            <div class="capt">${caps.map((k) => `<button class="chip small" data-copy="${esc(sec[k])}">${esc(k)}</button>`).join('')}</div></div>` : ''}
+          ${postHTML(j.id, i, r.postText)}
           ${(r.variants || []).length ? `<div class="small">Hook test versions: ${r.variants.map((v, n) => `<a href="/file?path=${encodeURIComponent(v)}&dl=1">version ${n + 2}</a>`).join(' · ')}</div>` : ''}
           <details><summary class="small">Change something</summary>
             <p class="small muted">Say what you want in normal words, e.g. "make the captions bigger" or "use a different hook". Then paste the message into the <b>same Claude chat</b>.</p>
@@ -635,6 +734,10 @@ function jobHTML(j, big) {
   return h + `</div>`;
 }
 function wire(root) {
+  $$('[data-more]', root).forEach((b) => b.onclick = () => {
+    const k = b.dataset.more, open = !openBoxes.has(k); open ? openBoxes.add(k) : openBoxes.delete(k);
+    b.previousElementSibling.classList.toggle('collapsed', !open); b.textContent = open ? 'Show less' : 'Show more';
+  });
   $$('[data-copy]', root).forEach((b) => b.onclick = async () => { await copy(b.dataset.copy); toast('Copied!'); });
   $$('[data-open]', root).forEach((b) => b.onclick = () => post(`/api/jobs/${b.dataset.open}/open`));
   $$('[data-del]', root).forEach((b) => b.onclick = async () => { if (confirm('Remove this from the list?')) { await post(`/api/jobs/${b.dataset.del}/delete`); refresh(); } });
@@ -647,13 +750,17 @@ function wire(root) {
 function renderCurrent(j) {
   j = j || S?.jobs?.find((x) => x.id === currentId);
   const el = $('#current');
-  if (!j || j.state === 'uploaded') { el.innerHTML = ''; return; }
+  if (!j || j.state === 'uploaded') { el.innerHTML = ''; el._sig = null; return; }
   if (el.contains(document.activeElement) && document.activeElement.tagName === 'TEXTAREA') return; // don't wipe typing
+  const sig = JSON.stringify({ ...j, statusAge: j.statusAge > 600000 });
+  if (el._sig === sig) return; el._sig = sig;
   el.innerHTML = `<h2 style="margin-top:28px">Your current video</h2>` + jobHTML(j, true); wire(el);
 }
 function renderJobs() {
   const el = $('#jobs'); if (el.contains(document.activeElement) && document.activeElement.tagName === 'TEXTAREA') return;
   const jobs = (S?.jobs || []).filter((j) => j.state !== 'uploaded');
+  const sig = JSON.stringify(jobs.map((j) => ({ ...j, statusAge: j.statusAge > 600000 })));
+  if (el._sig === sig) return; el._sig = sig;
   el.innerHTML = jobs.length ? jobs.map((j) => jobHTML(j)).join('') : `<div class="card muted">Nothing yet. Go to <a href="#" onclick="showTab('make');return false">Make reels</a> to start.</div>`;
   wire(el);
 }
@@ -664,6 +771,7 @@ async function refresh() {
     $('#kitName').textContent = S.kitName; $('#kitPath').textContent = S.kitFolder; $('#kitPath2').textContent = S.kitFolder;
     $('#musicCounts').textContent = Object.entries(S.music).map(([k, n]) => `${k}: ${n} song${n === 1 ? '' : 's'}`).join(' · ');
     musicWarn();
+    if (!renderLib.done || $('#libGrid').children.length !== Math.max(1, (S.library || []).length)) { renderLib(S.library || []); renderLib.done = true; }
     const cur = S.jobs.find((x) => x.id === currentId);
     if (!refresh.shown) { refresh.shown = true; if (cur && cur.state === 'uploaded') showJob(cur); else showJob(null); }
     renderCurrent(); if (!$('#tab-mine').classList.contains('hidden')) renderJobs();

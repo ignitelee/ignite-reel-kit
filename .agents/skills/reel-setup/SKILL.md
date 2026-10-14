@@ -42,10 +42,22 @@ line what's already fine and what's missing. Then fix only what's missing, in th
 | Git | `winget install -e --id Git.Git --accept-source-agreements --accept-package-agreements` |
 | FFmpeg | `winget install -e --id Gyan.FFmpeg --accept-source-agreements --accept-package-agreements` |
 | uv | `winget install -e --id astral-sh.uv --accept-source-agreements --accept-package-agreements` |
-Run these yourself (they click Allow, and Yes if Windows asks to allow changes). After winget installs,
-Windows only sees the new tools in a NEW window, so tell them exactly: "Now close the Claude app completely
-(right-click its icon at the bottom of the screen and choose Close window), open it again, click Code, choose
-the ignite-reel-kit folder, and type: carry on with setup". (Check `brand/brand.json` is still missing to know where you are.)
+Run these yourself (they click Allow, and Yes if Windows asks to allow changes).
+
+**No restart needed:** after winget installs, the Claude app still has the old PATH, and every command
+starts a fresh shell. So start each later command (in PowerShell) with a PATH refresh until the app has
+been restarted:
+`$env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User'); <command>`
+(in Git Bash: run it through `powershell -NoProfile -Command "..."`). Only if a tool still isn't found
+after that, tell them exactly: "Close the Claude app completely (right-click its icon at the bottom of the
+screen, Close window), open it again, click Code, choose the ignite-reel-kit folder and type: carry on with
+setup". (Check `brand/brand.json` is still missing to know where you are.)
+
+**Python folder (Windows):** the Claude desktop app (Microsoft Store version) redirects AppData into its
+own private folder, which breaks uv's Python install ("Missing expected target directory for Python minor
+version link"). The kit's scripts already work around it, but also set it for their user account, after
+asking ("This stops a known Windows problem with the speech tool. OK?"):
+`[Environment]::SetEnvironmentVariable('UV_PYTHON_INSTALL_DIR', "$env:USERPROFILE\.uv-python", 'User')`
 
 **Mac**: tools come from Homebrew. If `brew --version` fails, Homebrew needs their Mac password, so ask
 them to run this one themselves, with the click-by-click Mac steps above:
@@ -59,7 +71,8 @@ run those too, then close and reopen Claude Code. Then: `brew install node git f
 2. `npx hyperframes browser ensure` (downloads the video renderer once).
 3. Speech model, downloaded once (~1.6 GB, a few minutes on normal broadband). Tell them it's a one-off:
    `npm run transcribe -- --prepare` (always use this, not a raw `uv run`: on Windows it keeps Python in
-   `~/.uv-python`, because the Claude desktop app's private copy of AppData breaks uv's default Python folder).
+   `~/.uv-python`, because the Claude desktop app's private copy of AppData breaks uv's default Python folder;
+   on Windows, set UV_PYTHON_INSTALL_DIR first, see step 2).
 4. `npm test` should pass. Run `node scripts/reel-doctor.mjs` again: everything but the brand should be OK.
 
 ## 4. Their brand kit (writes brand/brand.json)
@@ -84,12 +97,21 @@ show them the result and confirm. Keep it under ~1000 px wide.
 
 Write `brand/brand.json`, then read it back to them in 4-5 plain lines.
 
-## 5. Music (optional)
+## 5. Stock footage (optional, 2 minutes)
+
+Ask: "Want free stock video clips (a pub, a beach, a gym...) added to your reels now and then? It needs a
+free Pexels account." If yes: they open https://www.pexels.com/api in their browser, sign up (their own
+account; you never sign up for them or type their details), and copy "Your API key". Then create `.env` in
+the kit folder from `.env.example` if it doesn't exist, open it for them in Notepad / TextEdit, and ask them
+to paste the key after `PEXELS_API_KEY=` and save. Test: `npm run broll -- video-projects/demo "beach" --list`
+should list clips. Never ask them to paste the key into the chat. If no: fine, reels just won't use stock clips.
+
+## 6. Music (optional)
 
 Explain the kit has no music (licences). They can drop tracks into `brand/music/<mood>/` (see
 `brand/music/README.md`): YouTube Audio Library or Pixabay Music are good free sources (check each licence).
 
-## 6. Finish
+## 7. Finish
 
 Run `node scripts/reel-doctor.mjs` (all OK). Then:
 1. `npm run shortcut`: puts an **IGNITE Reels** icon on their desktop that opens the dashboard.

@@ -31,8 +31,9 @@ Open the Claude app, click **Code**, and paste this:
 > unless it truly can't be run by you (for example it needs my computer password). If that happens, tell
 > me exactly where to paste it, click by click (which app to open, how to open it, where to click), and
 > that any "Do you want to allow this app to make changes?" box needs Yes.
-> First, if git isn't installed, install it (on Windows: winget, then tell me to close and reopen the
-> Claude app and paste this message again). Then download the kit with git from
+> First, if git isn't installed, install it (on Windows: with winget, then refresh PATH in your next
+> PowerShell command with $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' +
+> [Environment]::GetEnvironmentVariable('Path','User') so I don't have to restart anything). Then download the kit with git from
 > https://github.com/ignitelee/ignite-reel-kit into my Documents folder (if an ignite-reel-kit folder is
 > already there from an earlier try, update it with git pull instead), read the file
 > `.claude/skills/reel-setup/SKILL.md` inside it, and follow it step by step.
@@ -65,6 +66,8 @@ and music are never touched by updates.
   His original README is in [docs/HYPERFRAMES-KIT-README.md](docs/HYPERFRAMES-KIT-README.md); licences in
   `LICENSE`, `licenses/` and `THIRD_PARTY_NOTICES.md`.
 - **HyperFrames** by HeyGen (Apache-2.0), **GSAP**, **faster-whisper** (MIT).
+- Brand logos from **Simple Icons** (CC0): https://simpleicons.org. Logos are trademarks of their owners:
+  show them only when you mention the brand, never in a way that suggests they endorse you.
 - **Humanizer** skill by Siqi Chen / blader (MIT): `.claude/skills/humanizer/`.
 - Fonts: Anton, Inter, Playfair Display (SIL Open Font Licence), Material Icons (Apache-2.0); licence
   texts in `brand/fonts/licenses/`.
