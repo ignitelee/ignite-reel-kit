@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reel Studio</title>
+<style>
+:root{
+  --accent:#13E6BA; --bg:#07090f; --panel:#10141d; --panel2:#151a25; --line:#232a38; --text:#eef2f7;
+  --muted:#9aa4b5; --warn:#ffb648; --bad:#ff6b6b; --good:#3ddc97; --r:16px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+a{color:var(--accent)}
+button{font:inherit;cursor:pointer}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px 80px}
+header{position:sticky;top:0;z-index:20;background:rgba(7,9,15,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;gap:16px;padding-bottom:0;height:68px}
+.logo{height:36px;max-width:140px;object-fit:contain}
+.brandname{font-weight:800;font-size:19px;letter-spacing:.2px}
+.brandname span{color:var(--accent)}
+nav{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap}
+nav button{background:none;border:0;color:var(--muted);padding:10px 14px;border-radius:10px;font-weight:600}
+nav button.on{color:var(--text);background:var(--panel2)}
+nav button:hover{color:var(--text)}
+h1{font-size:30px;margin:34px 0 6px;line-height:1.2}
+h2{font-size:21px;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+.sub{color:var(--muted);margin:0 0 22px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:22px;margin:16px 0}
+.step{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#04110d;font-weight:800;font-size:15px;flex:none}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+.row{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.opt{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.opt label.t{display:flex;align-items:center;gap:6px;font-weight:700;margin-bottom:8px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:#0c1018;color:var(--text);padding:8px 14px;border-radius:999px;font-weight:600}
+.chip.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 18%,transparent)}
+input[type=text],input[type=url],textarea,select{width:100%;background:#0b0f17;border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 12px;font:inherit}
+textarea{min-height:76px;resize:vertical}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.big{font-size:28px;font-weight:800;color:var(--accent)}
+.btn{border:0;border-radius:12px;padding:13px 20px;font-weight:800;background:var(--accent);color:#04110d}
+.btn.ghost{background:var(--panel2);color:var(--text);border:1px solid var(--line);font-weight:700}
+.btn.danger{background:none;color:var(--bad);border:1px solid #4a2530}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.huge{font-size:19px;padding:16px 26px}
+/* drop zone */
+.drop{display:block;cursor:pointer;border:2px dashed #33405a;border-radius:var(--r);padding:38px 20px;text-align:center;background:#0b0f17;transition:.15s}
+.drop.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,#0b0f17)}
+.drop .ico{font-size:40px}
+.bar{height:12px;background:#0b0f17;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.bar>i{display:block;height:100%;width:0;background:var(--accent);transition:width .6s}
+/* tooltips: hover on a computer, tap on a phone */
+.tip{position:relative;display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;border:1px solid #3a4560;color:var(--muted);font-size:12px;font-weight:800;font-style:normal;cursor:help;flex:none;background:#0c1018}
+.tip:hover,.tip.open{color:#04110d;background:var(--accent);border-color:var(--accent)}
+.tip .tt{display:none;position:absolute;z-index:50;left:50%;bottom:calc(100% + 10px);transform:translateX(-50%);width:min(320px,80vw);background:#1d2433;color:var(--text);border:1px solid #33405a;border-radius:12px;padding:12px 14px;font-size:14px;font-weight:500;line-height:1.45;text-align:left;box-shadow:0 12px 30px rgba(0,0,0,.5);cursor:default}
+.tip:hover .tt,.tip.open .tt{display:block}
+.tip .tt::after{content:"";position:absolute;top:100%;left:50%;margin-left:-7px;border:7px solid transparent;border-top-color:#1d2433}
+/* the "what happens next" box */
+.next{border:2px solid var(--accent);background:color-mix(in srgb,var(--accent) 7%,var(--panel))}
+.next ol{margin:10px 0 0;padding:0;list-style:none;counter-reset:n}
+.next li{counter-increment:n;display:flex;gap:14px;padding:12px 0;border-top:1px solid var(--line)}
+.next li:first-child{border-top:0}
+.next li::before{content:counter(n);display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:50%;background:var(--accent);color:#04110d;font-weight:800;font-size:17px}
+.next li > div > b:first-child{display:block;font-size:17px}
+.allow{display:flex;gap:14px;align-items:flex-start;background:#2a2112;border:1px solid #5a4520;border-radius:12px;padding:14px 16px;margin:12px 0 4px}
+.allow .em{font-size:28px;line-height:1}
+.allow b{color:var(--warn)}
+.kbd{display:inline-block;border:1px solid #3a4560;border-bottom-width:3px;border-radius:6px;padding:0 7px;font-size:14px;font-weight:700;background:#0c1018}
+.msgbox{font-family:ui-monospace,Consolas,monospace;font-size:14px;background:#05070b;border:1px solid var(--line);border-radius:10px;padding:12px 14px;white-space:pre-wrap;word-break:break-word}
+.notice{border-radius:12px;padding:12px 16px;margin:12px 0;border:1px solid var(--line);background:var(--panel2)}
+.notice.warn{background:#2a2112;border-color:#5a4520}
+.notice.good{background:#0f2a20;border-color:#1f5a43}
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:13px;font-weight:700;background:var(--panel2);border:1px solid var(--line)}
+.pill.done{color:var(--good);border-color:#1f5a43}
+.pill.working{color:var(--accent)}
+.pill.wait{color:var(--warn)}
+.reels{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;margin-top:14px}
+.reel{background:var(--panel2);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.reel video{width:100%;aspect-ratio:9/16;background:#000;display:block}
+.reel .body{padding:12px 14px;display:flex;flex-direction:column;gap:10px;flex:1}
+.reel h3{margin:0;font-size:16px}
+.capt{display:flex;flex-wrap:wrap;gap:6px}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--accent);color:#04110d;font-weight:800;padding:12px 20px;border-radius:12px;z-index:99;display:none}
+.swatch{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);padding:0;background:none}
+.preview-cap{font-weight:800;font-size:24px;background:#000;border-radius:12px;padding:18px;text-align:center}
+.preview-cap span{color:var(--accent)}
+.hidden{display:none!important}
+details{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:10px 0}
+details summary{cursor:pointer;font-weight:700}
+@media (max-width:640px){h1{font-size:24px}header .wrap{height:auto;flex-wrap:wrap;padding:10px 16px}nav{margin-left:0}.wrap{padding:0 16px 60px}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <img id="hdrLogo" class="logo hidden" alt="Your logo">
+  <div class="brandname">Reel <span>Studio</span></div>
+  <nav>
+    <button data-tab="make" class="on">Make reels</button>
+    <button data-tab="mine">My reels</button>
+    <button data-tab="brand">My brand</button>
+    <button data-tab="help">Help</button>
+  </nav>
+</div></header>
+
+<main class="wrap">
+
+<!-- ============ MAKE REELS ============ -->
+<section id="tab-make">
+  <h1>Make reels from your video</h1>
+  <p class="sub">Three steps. It takes about a minute here, then Claude does the editing.</p>
+
+  <div id="needBrand" class="notice warn hidden">
+    <b>First, add your logo and colour</b> so your reels look like you.
+    <button class="btn ghost small" onclick="showTab('brand')" style="margin-left:8px;padding:8px 14px">Set up my brand</button>
+  </div>
+
+  <!-- step 1 -->
+  <div class="card">
+    <h2><span class="step">1</span> Your main video (you talking)
+      <i class="tip">i<span class="tt">This is the video of YOU talking to the camera: your voice is the soundtrack of the reel. Filmed on your phone is perfect. MP4 or MOV files work, up to about 10 minutes in total. Pictures, screen recordings and other clips go in the next box ("Extra pictures and clips"), not here.</span></i>
+    </h2>
+    <p class="muted small" style="margin:4px 0 14px">Drag your video into the box, or click the box to pick it. <b style="color:var(--text)">Filmed it in more than one go?</b> Add the first part here, then up to 2 more with the button that appears. <b style="color:var(--text)">Tip:</b> film all parts in the same place with the same camera, so the joins look natural.</p>
+    <label id="drop" class="drop" for="file">
+      <div class="ico">🎬</div>
+      <div style="font-weight:800;font-size:18px">Drop your main video here</div>
+      <div class="muted small">or click to choose a file (MP4 or MOV)</div>
+      <input id="file" type="file" accept="video/*,.mp4,.mov,.m4v" class="hidden">
+    </label>
+    <div id="upWrap" class="hidden" style="margin-top:14px">
+      <div class="row" style="justify-content:space-between"><b id="upName"></b><span id="upPct" class="muted small"></span></div>
+      <div class="bar" style="margin-top:8px"><i id="upBar"></i></div>
+    </div>
+    <div id="mainsBox" class="hidden">
+      <div id="mainsList" style="display:grid;gap:8px"></div>
+      <div class="row" style="margin-top:12px">
+        <label class="btn ghost small" for="mainMore" style="display:inline-block;padding:9px 14px">+ Add another part of me talking</label>
+        <input id="mainMore" type="file" multiple accept="video/*,.mp4,.mov,.m4v" class="hidden">
+        <i class="tip">i<span class="tt">Only for more videos of YOU TALKING that belong to the same story, e.g. you filmed part 1 and part 2 separately. You can have up to 3 parts. Film them in the same place with the same camera so the joins look natural. They're joined into one video, top to bottom, before the editing starts. Use the arrows to change the order. A clip you want shown on screen (not joined on) goes in "Extra pictures and clips" below.</span></i>
+        <button class="btn ghost small" style="padding:9px 14px;margin-left:auto" onclick="startOver()">Start again with a different video</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- step 1b: extras -->
+  <div class="card">
+    <h2><span class="step" style="font-size:12px">1b</span> Extra pictures and clips <span class="muted" style="font-size:15px;font-weight:600">(optional)</span>
+      <i class="tip">i<span class="tt">Things you want SHOWN in the reel while you talk: a screenshot of your results, a photo, a screen recording from your phone or a short clip. You can add up to 3: fewer extras make a cleaner reel. For each one, choose how it should be used and say when it should appear. Your logo is NOT added here: it's in the "My brand" tab and goes on every reel automatically.</span></i>
+    </h2>
+    <p class="muted small" style="margin:4px 0 14px">Skip this if you just want your talking video edited. Otherwise add pictures (PNG, JPG) or video clips (MP4, MOV), then for each one choose <b style="color:var(--text)">how</b> to use it and type <b style="color:var(--text)">when</b> it should appear.</p>
+    <div id="extrasOff" class="small muted">Add your main video in step 1 first, then you can add extras here.</div>
+    <div id="extrasOn" class="hidden">
+      <label class="btn ghost small" for="extraFile" style="display:inline-block;padding:9px 14px">+ Add pictures or clips</label>
+      <input id="extraFile" type="file" multiple accept="image/png,image/jpeg,image/webp,video/mp4,video/quicktime,.mov,.m4v" class="hidden">
+      <span class="small muted" style="margin-left:8px" id="extrasCount">Up to 3.</span>
+      <div id="extrasList" style="margin-top:10px;display:grid;gap:8px"></div>
+    </div>
+  </div>
+
+  <!-- step 2 -->
+  <div class="card" id="optsCard">
+    <h2><span class="step">2</span> Choose what you want
+      <i class="tip">i<span class="tt">These are only suggestions for Claude. If you're not sure, leave them as they are: the defaults work well.</span></i>
+    </h2>
+    <p class="muted small" style="margin:4px 0 14px">Not sure? Leave everything as it is. Hover over (or tap) any <i class="tip" style="display:inline-grid">i<span class="tt">Like this! Each one explains that option in plain English.</span></i> for an explanation.</p>
+
+    <div class="grid2">
+      <div class="opt">
+        <label class="t">How many reels? <i class="tip">i<span class="tt">How many separate short reels Claude should cut from your video. Each reel is one idea, usually 15 to 60 seconds. A 1-minute video normally makes 1 reel. A 5-minute video can make 3 to 5. If your video can't make that many good ones, Claude will make fewer and tell you why.</span></i></label>
+        <div class="row"><span class="big" id="countV">1</span><input id="count" type="range" min="1" max="6" value="1" style="flex:1"></div>
+      </div>
+      <div class="opt">
+        <label class="t">Where will you post them? <i class="tip">i<span class="tt">Tick every app you'll post on. The video works on all of them. Claude writes a separate caption and hashtags for each app you tick, because each app works a bit differently.</span></i></label>
+        <div class="chips" id="plats">
+          <button class="chip" data-v="instagram">Instagram</button>
+          <button class="chip" data-v="tiktok">TikTok</button>
+          <button class="chip" data-v="facebook">Facebook</button>
+          <button class="chip" data-v="youtube">YouTube Shorts</button>
+        </div>
+      </div>
+      <div class="opt">
+        <label class="t">Words on screen (captions) <i class="tip">i<span class="tt">The words you say appear on the video as you say them, with the word you're saying in your brand colour. Most people watch with the sound off, so we recommend keeping this ON.</span></i></label>
+        <div class="chips" data-group="captions">
+          <button class="chip on" data-v="true">Yes (recommended)</button>
+          <button class="chip" data-v="false">No</button>
+        </div>
+      </div>
+      <div class="opt">
+        <label class="t">Graphics <i class="tip">i<span class="tt">Little animations that match what you're saying: ticks and crosses, lists, numbers counting up, a phone showing the IGNITE Hub. "A few" keeps it calm. "Lots" keeps viewers watching but is busier. Graphics never cover your face.</span></i></label>
+        <div class="chips" data-group="graphics">
+          <button class="chip" data-v="none">None</button>
+          <button class="chip" data-v="light">A few</button>
+          <button class="chip on" data-v="full">Lots</button>
+        </div>
+      </div>
+      <div class="opt">
+        <label class="t">Background music <i class="tip">i<span class="tt">Quiet music under your voice. Pick the feel you want. The kit doesn't come with songs (because of copyright): you add your own free songs once, in the "My brand" tab. If a mood has no songs yet, your reel will have no music.</span></i></label>
+        <div class="chips" data-group="music">
+          <button class="chip" data-v="none">No music</button>
+          <button class="chip on" data-v="calm">Calm</button>
+          <button class="chip" data-v="upbeat">Upbeat</button>
+          <button class="chip" data-v="inspiring">Inspiring</button>
+          <button class="chip" data-v="emotional">Emotional</button>
+        </div>
+        <div id="musicWarn" class="small muted" style="margin-top:8px"></div>
+      </div>
+      <div class="opt">
+        <label class="t">Also make the full-length version? <i class="tip">i<span class="tt">As well as the short reels, Claude makes one longer version of your whole video, with mistakes and long pauses cut out, captions and graphics. Good for YouTube or Facebook.</span></i></label>
+        <div class="chips" data-group="full">
+          <button class="chip on" data-v="false">No</button>
+          <button class="chip" data-v="true">Yes</button>
+        </div>
+      </div>
+      <div class="opt">
+        <label class="t">Hook test versions <i class="tip">i<span class="tt">The "hook" is the first 2 seconds: the line that stops people scrolling. Claude can make 2 or 3 copies of each reel with different opening lines. Post them as "trial reels" a day or two apart and keep the one that does best. If this is new to you, choose None.</span></i></label>
+        <div class="chips" data-group="variants">
+          <button class="chip on" data-v="0">None</button>
+          <button class="chip" data-v="2">2 versions</button>
+          <button class="chip" data-v="3">3 versions</button>
+        </div>
+      </div>
+      <div class="opt">
+        <label class="t">Anything else? (optional) <i class="tip">i<span class="tt">Tell Claude anything in normal words. For example: "Make the hook about saving time", "Cut the bit where I cough", or "Don't use the part about prices". Leave it empty if you have nothing to add.</span></i></label>
+        <textarea id="notes" placeholder="e.g. Start with the line about my first month"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- step 3 -->
+  <div class="card next" id="sendCard">
+    <h2><span class="step">3</span> Send it to Claude: please read this, it takes 30 seconds</h2>
+    <p style="margin:6px 0 4px">The editing is done by <b>Claude</b>, in the <b>Claude app</b> on your computer, using <b>your own Claude account</b>.
+      <i class="tip">i<span class="tt">You need the Claude desktop app installed and signed in to your own paid Claude account (Pro or Max). It's Claude that cuts and edits your video, on your computer. Making reels uses some of your Claude plan's usage, like any other chat.</span></i></p>
+    <p class="muted small" style="margin:0">Claude will now run a series of steps on your computer to edit your video. <b style="color:var(--text)">Some steps need your consent, so Claude will pop up and ask you to "Allow".</b> This is normal. Here's exactly what to do:</p>
+
+    <ol>
+      <li><div><b>Click the green "Copy my message" button below.</b>
+        <span class="muted small">This copies a short message for Claude. It tells Claude where your video is and what you chose above.</span></div></li>
+      <li><div><b>Open the Claude app and click "Code".</b>
+        <span class="muted small">"Code" is at the top (or in the menu on the left) of the Claude app. It's the part of Claude that can work with files on your computer.</span>
+        <i class="tip">i<span class="tt">Can't see "Code"? Make sure you have the Claude desktop app (from claude.com/download), not the website, and that you're signed in. Update the app if it's old.</span></i></div></li>
+      <li><div><b>Check the folder says <span class="kbd" id="kitName">ignite-reel-kit</span></b>
+        <span class="muted small">Next to the message box there's a folder name. If it's a different folder, click it and choose the <b>ignite-reel-kit</b> folder in your Documents.</span>
+        <i class="tip">i<span class="tt">Claude can only find your video if it's working in the kit's folder. Your kit folder is: <span id="kitPath"></span></span></i></div></li>
+      <li><div><b>Click in Claude's message box, paste (<span class="kbd ctrl">Ctrl</span> + <span class="kbd">V</span>) and press <span class="kbd">Enter</span>.</b>
+        <span class="muted small">Claude starts working straight away.</span></div></li>
+      <li><div><b>When Claude asks to "Allow" something, click Allow.</b>
+        <span class="muted small">Claude never runs anything on your computer without asking you first. It will ask several times: to read your video, cut it, add captions and graphics, and save the finished reels. If it offers to always allow the same thing, you can pick that so it asks less.</span>
+        <div class="allow"><div class="em">✋</div><div><b>This is expected, not an error.</b> Each pop-up is Claude asking your permission to use one of the kit's tools on your computer. Nothing is posted online and nothing leaves your computer except your chat with Claude.
+          <i class="tip">i<span class="tt">What it runs: the kit's own tools for listening to your video (to write the captions), cutting out pauses and mistakes, building the graphics, and saving the MP4. All of them are inside the kit folder. If Claude ever asks for something that sounds unrelated to your reel, you can click Deny.</span></i></div></div></div></li>
+      <li><div><b>Leave the Claude app open and come back to this page.</b>
+        <span class="muted small">The progress bar below fills in while Claude works. It usually takes 10 to 40 minutes, depending on how long your video is and how many reels you asked for. Your finished reels and captions appear here. <b style="color:var(--text)">Changes take time too:</b> even a small change means the reel is rebuilt from scratch, so it's worth getting your choices right here first.</span></div></li>
+    </ol>
+
+    <div id="sendArea" style="margin-top:16px">
+      <button id="copyBtn" class="btn huge" disabled>Copy my message</button>
+      <span id="copyHint" class="muted small" style="margin-left:10px">Add your video in step 1 first.</span>
+      <div id="msgWrap" class="hidden" style="margin-top:14px">
+        <div class="small muted" style="margin-bottom:6px">This is the message (already copied). If the button didn't work, select it and copy it yourself:</div>
+        <div id="msg" class="msgbox"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- progress for the current job -->
+  <div id="current"></div>
+</section>
+
+<!-- ============ MY REELS ============ -->
+<section id="tab-mine" class="hidden">
+  <h1>My reels</h1>
+  <p class="sub">Every video you've sent to Claude, newest first. Watch, download and copy your captions here.</p>
+  <div id="jobs"></div>
+</section>
+
+<!-- ============ MY BRAND ============ -->
+<section id="tab-brand" class="hidden">
+  <h1>My brand</h1>
+  <p class="sub">Set this up once. Every reel uses your logo and colour. You can change it any time.</p>
+
+  <div class="card">
+    <h2>Your logo <i class="tip">i<span class="tt">Your logo appears small in the top corner of every reel. A PNG with a see-through background looks best. If yours has a white box around it, tick "Remove the white background" and we'll cut it out for you.</span></i></h2>
+    <div class="row" style="margin-top:12px">
+      <div style="width:180px;height:90px;border-radius:12px;background:repeating-conic-gradient(#1a1f2b 0 25%,#121722 0 50%) 0 0/16px 16px;display:grid;place-items:center;border:1px solid var(--line)">
+        <img id="logoPrev" class="hidden" style="max-width:160px;max-height:76px" alt="Your logo">
+        <span id="logoNone" class="muted small">No logo yet</span>
+      </div>
+      <div>
+        <label class="btn ghost" for="logoFile" style="display:inline-block">Upload my logo</label>
+        <input id="logoFile" type="file" accept="image/png,image/jpeg,image/webp" class="hidden">
+        <div style="margin-top:10px"><label class="small"><input id="removeWhite" type="checkbox"> Remove the white background</label>
+          <i class="tip">i<span class="tt">Tick this if your logo is a JPG or has a white rectangle behind it. We make the white see-through. If your logo itself is white, leave this unticked.</span></i></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Your colour <i class="tip">i<span class="tt">One main colour for your reels. It's used for the word you're saying in the captions, key words and glows. Pick the main colour from your logo. Bright colours work best on video.</span></i></h2>
+    <div class="row" style="margin-top:12px">
+      <input id="accent" type="color" class="swatch" value="#13e6ba">
+      <input id="accentHex" type="text" style="max-width:140px" value="#13E6BA">
+      <div class="chips" id="presets"></div>
+    </div>
+    <div class="preview-cap" style="margin-top:14px">This is how your <span>captions</span> look</div>
+  </div>
+
+  <div class="card">
+    <h2>About you</h2>
+    <div class="grid2" style="margin-top:12px">
+      <div><label class="t small" style="display:flex;gap:6px;align-items:center;font-weight:700">Your name <i class="tip">i<span class="tt">Used by Claude when writing your captions. It isn't shown on the video.</span></i></label>
+        <input id="bName" type="text" placeholder="e.g. Sam Smith"></div>
+      <div><label class="t small" style="display:flex;gap:6px;align-items:center;font-weight:700">Website or handle (optional) <i class="tip">i<span class="tt">For example @samtrades or samtrades.com. Claude can mention it in your post captions. It's only put on the video if you ask.</span></i></label>
+        <input id="bWeb" type="text" placeholder="@yourhandle"></div>
+      <div><label class="t small" style="display:flex;gap:6px;align-items:center;font-weight:700">What do you usually ask people to do? (optional) <i class="tip">i<span class="tt">Your "call to action". For example: Comment "IB" and I'll message you, or DM me "START". Claude uses it at the end of your post captions.</span></i></label>
+        <input id="bCta" type="text" placeholder='e.g. Comment "IB" and I'll send you the details'></div>
+      <div><label class="t small" style="display:flex;gap:6px;align-items:center;font-weight:700">How do you talk? (optional) <i class="tip">i<span class="tt">A few words about your style, so the captions sound like you. For example: friendly, straight to the point, a bit funny.</span></i></label>
+        <input id="bVoice" type="text" placeholder="plain, direct, honest, friendly"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Your usual choices <i class="tip">i<span class="tt">What "Make reels" starts with each time. You can still change them for each video.</span></i></h2>
+    <div class="grid2" style="margin-top:12px">
+      <div class="opt"><label class="t">Where you post</label>
+        <div class="chips" id="defPlats">
+          <button class="chip" data-v="instagram">Instagram</button><button class="chip" data-v="tiktok">TikTok</button>
+          <button class="chip" data-v="facebook">Facebook</button><button class="chip" data-v="youtube">YouTube Shorts</button>
+        </div></div>
+      <div class="opt"><label class="t">Music mood <i class="tip">i<span class="tt">To add songs: click "Open my music folder", then put MP3 files into the folder for each mood (calm, upbeat, inspiring, emotional). Free songs: YouTube Audio Library or Pixabay Music. Check each song's licence allows use in videos.</span></i></label>
+        <select id="defMusic"><option value="none">No music</option><option value="calm">Calm</option><option value="upbeat">Upbeat</option><option value="inspiring">Inspiring</option><option value="emotional">Emotional</option></select>
+        <div class="small muted" id="musicCounts" style="margin-top:8px"></div>
+        <button class="btn ghost small" style="margin-top:8px;padding:8px 14px" onclick="post('/api/open-music')">Open my music folder</button></div>
+    </div>
+  </div>
+  <button class="btn huge" id="saveBrand">Save my brand</button>
+</section>
+
+<!-- ============ HELP ============ -->
+<section id="tab-help" class="hidden">
+  <h1>Help</h1>
+  <p class="sub">The answers to the questions people ask most.</p>
+  <details open><summary>Claude keeps asking me to "Allow". Is something wrong?</summary>
+    <p>No, that's normal and it means it's working. Claude asks your permission before it runs anything on your computer (reading your video, cutting it, saving the reel). Click <b>Allow</b>. If it offers to always allow the same thing, choosing that means it asks less next time.</p></details>
+  <details><summary>I pasted the message and nothing is happening here</summary>
+    <p>Look at the Claude app: it's probably waiting for you to click <b>Allow</b>. Also check that the folder next to the message box says <b>ignite-reel-kit</b>. The progress bar here only moves once Claude has started.</p></details>
+  <details><summary>It's been ages. Is it stuck?</summary>
+    <p>Making reels takes 10 to 40 minutes. Most of that is "Rendering", where the computer builds the video frame by frame, and it can look still for a few minutes. Check the Claude app isn't waiting for an Allow. Keep your computer awake and plugged in.</p></details>
+  <details><summary>Does this cost money? Whose account is it using?</summary>
+    <p>It uses <b>your own</b> Claude account and plan, nobody else's. Making reels uses some of your plan's usage, like a long chat. The kit itself is free. Never share your Claude login with anyone, and never use someone else's.</p></details>
+  <details><summary>Where are my finished videos?</summary>
+    <p>On the <b>My reels</b> tab: press <b>Download</b>, or <b>Show in folder</b> to see the files. They're saved in the kit's <b>video-projects</b> folder.</p></details>
+  <details><summary>I want to change something in a reel</summary>
+    <p><b>Warning: even a small change takes a long time</b> (often 10 to 20 minutes, longer for long reels), because the whole reel has to be rebuilt and re-rendered. So write <b>all</b> your changes in one go. Under the reel, type what you want changed in normal words, press <b>Make a change message</b>, then paste that into the <b>same Claude chat</b> and press Enter.</p></details>
+  <details><summary>How do I add music?</summary>
+    <p>Go to <b>My brand</b>, press <b>Open my music folder</b>, and put MP3 songs into the mood folders (calm, upbeat, inspiring, emotional). Free songs: YouTube Audio Library or Pixabay Music.</p></details>
+  <details><summary>I have more than one video, or pictures too</summary>
+    <p><b>More videos of you talking</b> (you filmed it in parts): add the first in step 1, then press <b>+ Add another part of me talking</b> (up to 3 parts; film them in the same place with the same camera so the joins look natural). They're joined into one video in the order shown (use the arrows to change it).</p>
+    <p><b>Anything you want SHOWN while you talk</b> (screenshots, photos, phone recordings, short clips): add up to 3 in <b>1b Extra pictures and clips</b>. For each one, choose <b>How</b> (beside you or full screen) and type <b>When</b> it should appear, e.g. "when I talk about my results". Not sure? Choose "Let Claude decide".</p>
+    <p>Your <b>logo</b> doesn't go in either: it's in <b>My brand</b> and goes on every reel automatically.</p></details>
+  <details><summary>Does it post to my Instagram or TikTok?</summary>
+    <p>No. It never posts anything. You download the reel and post it yourself, with the caption from this page.</p></details>
+  <details><summary>How do I open this page again?</summary>
+    <p>Double-click <b>IGNITE Reels</b> on your desktop. A small black window opens as well: leave it open while you use the dashboard. Or in Claude, say "open my reel dashboard".</p></details>
+  <details><summary>How do I update the kit?</summary>
+    <p>In Claude (Code, in the ignite-reel-kit folder) say: <b>update my IGNITE Reel Kit</b>. Your logo, settings and music are kept.</p></details>
+  <p class="muted small" style="margin-top:20px">Kit folder: <span id="kitPath2"></span> <button class="btn ghost small" style="padding:6px 12px;margin-left:6px" onclick="post('/api/open-kit')">Open it</button></p>
+</section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s), $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const MAC = /Mac|iPhone|iPad/.test(navigator.platform);
+let S = null, currentId = null;
+try { currentId = localStorage.getItem('reelJob'); } catch {}
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const toast = (t) => { const e = $('#toast'); e.textContent = t; e.style.display = 'block'; clearTimeout(e._t); e._t = setTimeout(() => e.style.display = 'none', 2600); };
+async function post(u, body, raw) {
+  const r = await fetch(u, { method: 'POST', headers: raw ? {} : { 'Content-Type': 'application/json' }, body: raw ?? JSON.stringify(body || {}) });
+  const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'Something went wrong'); return j;
+}
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch { const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select();
+    const ok = document.execCommand('copy'); t.remove(); return ok; }
+}
+if (MAC) $$('.ctrl').forEach((e) => e.textContent = 'Cmd');
+
+// tooltips: tap to open on touch screens; tap elsewhere to close
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('.tip'); $$('.tip.open').forEach((x) => x !== t && x.classList.remove('open'));
+  if (t && !e.target.closest('.tt')) { t.classList.toggle('open'); e.preventDefault(); }
+});
+
+// tabs
+function showTab(n) { $$('nav button').forEach((b) => b.classList.toggle('on', b.dataset.tab === n));
+  $$('main > section').forEach((s) => s.classList.toggle('hidden', s.id !== 'tab-' + n)); if (n === 'mine') renderJobs(); scrollTo(0, 0); }
+$$('nav button').forEach((b) => b.onclick = () => showTab(b.dataset.tab));
+
+// chip groups
+$$('.chips[data-group] .chip').forEach((c) => c.onclick = () => { $$('.chip', c.parentElement).forEach((x) => x.classList.toggle('on', x === c)); if (c.parentElement.dataset.group === 'music') musicWarn(); });
+$$('#plats .chip, #defPlats .chip').forEach((c) => c.onclick = () => c.classList.toggle('on'));
+const groupVal = (g) => $(`.chips[data-group="${g}"] .chip.on`)?.dataset.v;
+$('#count').oninput = (e) => $('#countV').textContent = e.target.value;
+function musicWarn() {
+  const m = groupVal('music'), n = S?.music?.[m] ?? 0;
+  $('#musicWarn').innerHTML = m === 'none' ? '' : n ? `${n} ${m} song${n > 1 ? 's' : ''} ready.`
+    : `⚠️ No ${m} songs added yet, so there'd be no music. <a href="#" onclick="showTab('brand');return false">Add songs in My brand</a>.`;
+}
+
+// brand colour
+function setAccent(c) { document.documentElement.style.setProperty('--accent', c); }
+const PRESETS = ['#13E6BA', '#2F80ED', '#F2994A', '#EB5757', '#9B51E0', '#F2C94C', '#27AE60', '#FFFFFF'];
+$('#presets').innerHTML = PRESETS.map((c) => `<button class="chip" style="width:34px;height:34px;padding:0;background:${c}" title="${c}" data-c="${c}"></button>`).join('');
+$$('#presets .chip').forEach((b) => b.onclick = () => { $('#accent').value = b.dataset.c.toLowerCase(); $('#accentHex').value = b.dataset.c; setAccent(b.dataset.c); });
+$('#accent').oninput = (e) => { $('#accentHex').value = e.target.value.toUpperCase(); setAccent(e.target.value); };
+$('#accentHex').oninput = (e) => { const v = e.target.value.trim(); if (/^#[0-9a-f]{6}$/i.test(v)) { $('#accent').value = v.toLowerCase(); setAccent(v); } };
+
+function fillBrand(b) {
+  setAccent(b.accent_color || '#13E6BA');
+  $('#accent').value = (b.accent_color || '#13E6BA').toLowerCase(); $('#accentHex').value = (b.accent_color || '#13E6BA').toUpperCase();
+  $('#bName').value = b.your_name && b.your_name !== 'Your Name' ? b.your_name : ''; $('#bWeb').value = b.website || '';
+  $('#bCta').value = b.cta || ''; $('#bVoice').value = b.voice || '';
+  const plats = b.default_platforms || ['instagram', 'tiktok'];
+  $$('#defPlats .chip, #plats .chip').forEach((c) => c.classList.toggle('on', plats.includes(c.dataset.v)));
+  $('#defMusic').value = b.music_mood || 'calm';
+  const mus = b.music_mood || 'calm'; $$('.chips[data-group="music"] .chip').forEach((c) => c.classList.toggle('on', c.dataset.v === mus));
+  const cap = b.captions === false ? 'false' : 'true'; $$('.chips[data-group="captions"] .chip').forEach((c) => c.classList.toggle('on', c.dataset.v === cap));
+  const gr = b.graphics || 'full'; $$('.chips[data-group="graphics"] .chip').forEach((c) => c.classList.toggle('on', c.dataset.v === gr));
+  for (const [img, none] of [[$('#logoPrev'), $('#logoNone')], [$('#hdrLogo'), null]]) {
+    if (b.logoUrl) { img.src = b.logoUrl; img.classList.remove('hidden'); none?.classList.add('hidden'); }
+    else { img.classList.add('hidden'); none?.classList.remove('hidden'); }
+  }
+  $('#needBrand').classList.toggle('hidden', !!(b.exists && b.logoUrl));
+}
+$('#saveBrand').onclick = async () => {
+  try {
+    const b = await post('/api/brand', { your_name: $('#bName').value.trim() || 'Your Name', website: $('#bWeb').value.trim(), cta: $('#bCta').value.trim(),
+      voice: $('#bVoice').value.trim() || 'plain, direct, honest, friendly, no hype', accent_color: $('#accentHex').value.trim().toUpperCase(),
+      default_platforms: $$('#defPlats .chip.on').map((c) => c.dataset.v), music_mood: $('#defMusic').value });
+    S.brand = b; fillBrand(b); toast('Saved. Your reels will use this.');
+  } catch (e) { alert(e.message); }
+};
+$('#logoFile').onchange = async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  const ext = (f.name.split('.').pop() || 'png').toLowerCase();
+  try { const b = await post(`/api/brand/logo?ext=${ext}&removeWhite=${$('#removeWhite').checked ? 1 : 0}`, null, f); S.brand = b; fillBrand(b); toast('Logo saved.'); }
+  catch (err) { alert(err.message); }
+  e.target.value = '';
+};
+
+// upload
+const drop = $('#drop');
+['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', (e) => e.dataTransfer.files[0] && upload(e.dataTransfer.files[0]));
+$('#file').onchange = (e) => e.target.files[0] && upload(e.target.files[0]);
+const fmtDur = (d) => d ? `${Math.floor(d / 60)}:${String(Math.round(d % 60)).padStart(2, '0')}` : '';
+const isVid = (f) => /\.(mp4|mov|m4v|webm)$/i.test(f);
+const fileUrl = (j, f) => '/file?path=' + encodeURIComponent(`dashboard/jobs/${j.id}/${f}`);
+const thumb = (src, vid) => vid
+  ? `<video src="${src}#t=0.5" muted preload="metadata" style="width:64px;height:64px;object-fit:cover;border-radius:8px;background:#000;flex:none"></video>`
+  : `<img src="${src}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;background:#000;flex:none">`;
+const arrows = (kind, file, i, n) => `<div style="display:grid;gap:4px">
+  <button class="btn ghost small" style="padding:2px 9px" title="Move up" data-mv="${kind}" data-f="${esc(file)}" data-d="-1" ${i === 0 ? 'disabled' : ''}>▲</button>
+  <button class="btn ghost small" style="padding:2px 9px" title="Move down" data-mv="${kind}" data-f="${esc(file)}" data-d="1" ${i === n - 1 ? 'disabled' : ''}>▼</button></div>`;
+
+// send one file with a progress bar
+function sendFile(url, f, label) {
+  return new Promise((ok, bad) => {
+    $('#upWrap').classList.remove('hidden'); $('#upName').textContent = label || f.name; $('#upBar').style.width = '0%'; $('#upPct').textContent = '';
+    const x = new XMLHttpRequest(); x.open('POST', url);
+    x.upload.onprogress = (e) => { const p = Math.round(100 * e.loaded / e.total); $('#upBar').style.width = p + '%'; $('#upPct').textContent = p + '%'; };
+    x.onload = () => { $('#upWrap').classList.add('hidden'); let j = {}; try { j = JSON.parse(x.responseText); } catch {}
+      x.status === 200 ? ok(j) : bad(new Error(j.error || 'Upload failed')); };
+    x.onerror = () => { $('#upWrap').classList.add('hidden'); bad(new Error('Upload failed. Is the dashboard window still open?')); };
+    x.send(f);
+  });
+}
+
+// step 1: the main (talking) video, possibly in several parts
+async function upload(f) {
+  if (!isVid(f.name)) return alert('Please use a video file (MP4 or MOV). Pictures go in "Extra pictures and clips".');
+  try {
+    const j = await sendFile('/api/upload?name=' + encodeURIComponent(f.name), f, 'Uploading ' + f.name);
+    currentId = j.id; try { localStorage.setItem('reelJob', j.id); } catch {}
+    if (j.duration > 90 && $('#count').value === '1') { $('#count').value = Math.min(5, Math.max(2, Math.round(j.duration / 75))); $('#countV').textContent = $('#count').value; }
+    $('#msgWrap').classList.add('hidden'); $('#copyBtn').textContent = 'Copy my message';
+    showJob(j); toast('Video added.');
+  } catch (e) { alert(e.message); }
+}
+$('#mainMore').onchange = async (e) => {
+  for (const f of e.target.files) {
+    if (!isVid(f.name)) { alert(`${f.name} isn't a video. Pictures go in "Extra pictures and clips".`); continue; }
+    try { showJob(await sendFile(`/api/jobs/${currentId}/main?name=${encodeURIComponent(f.name)}`, f, 'Uploading ' + f.name)); toast(`Added ${f.name}`); }
+    catch (err) { alert(err.message); break; }
+  }
+  e.target.value = '';
+};
+function startOver() {
+  if (!confirm('Start again with a different main video? (The current one stays in "My reels" until you remove it.)')) return;
+  currentId = null; try { localStorage.removeItem('reelJob'); } catch {}
+  showJob(null); $('#msgWrap').classList.add('hidden'); renderCurrent();
+}
+function renderMains(j) {
+  const has = !!j; $('#drop').classList.toggle('hidden', has); $('#mainsBox').classList.toggle('hidden', !has);
+  if (!j) return;
+  const ms = j.mains || [], total = ms.reduce((a, m) => a + (m.duration || 0), 0);
+  $('#mainsList').innerHTML = ms.map((m, i) => `<div class="row" style="background:#0f2a20;border:1px solid #1f5a43;border-radius:10px;padding:8px">
+      ${ms.length > 1 ? arrows('main', m.file, i, ms.length) : ''}${thumb(fileUrl(j, m.file), true)}
+      <div style="flex:1;min-width:180px"><div>✅ <b>${ms.length > 1 ? `Part ${i + 1}: ` : ''}${esc(m.name)}</b></div>
+        <div class="small muted">${fmtDur(m.duration) ? fmtDur(m.duration) + ' long' : ''}</div></div>
+      ${ms.length > 1 ? `<button class="btn danger small" style="padding:6px 12px" data-unmain="${esc(m.file)}">Remove</button>` : ''}</div>`).join('')
+    + (ms.length > 1 ? `<div class="small muted">These ${ms.length} parts will be joined into one video, top to bottom (${fmtDur(total)} in total).</div>` : '');
+  $('label[for="mainMore"]').classList.toggle('hidden', ms.length >= 3);
+  $$('[data-unmain]').forEach((b) => b.onclick = async () => { try { showJob(await post(`/api/jobs/${currentId}/unmain`, { file: b.dataset.unmain })); } catch (e) { alert(e.message); } });
+  wireMoves(j);
+}
+
+// step 1b: extra pictures and clips, each with "how" and "when"
+const ROLE_OPTS = [['auto', 'Let Claude decide'], ['popup', 'Beside me while I talk'], ['full', 'Full screen while I talk'],
+];
+function renderExtras(j) {
+  const on = !!j; $('#extrasOff').classList.toggle('hidden', on); $('#extrasOn').classList.toggle('hidden', !on);
+  if (!j) { $('#extrasList').innerHTML = ''; return; }
+  const keepN = Object.fromEntries($$('#extrasList input[data-x]').map((i) => [i.dataset.x, i.value]));
+  const keepR = Object.fromEntries($$('#extrasList select[data-r]').map((i) => [i.dataset.r, i.value]));
+  const notes = { ...(j.options?.extraNotes || {}), ...keepN }, roles = { ...(j.options?.extraRoles || {}), ...keepR };
+  const xs = j.extras || [];
+  $('#extrasList').innerHTML = xs.map((x, i) => {
+    const vid = isVid(x.file), opts = ROLE_OPTS;
+    return `<div class="row" style="background:#0b0f17;border:1px solid var(--line);border-radius:10px;padding:8px;align-items:flex-start">
+      ${xs.length > 1 ? arrows('extra', x.file, i, xs.length) : ''}${thumb(fileUrl(j, 'extras/' + x.file), vid)}
+      <div style="flex:1;min-width:220px;display:grid;gap:6px"><div class="small"><b>${esc(x.name)}</b> <span class="muted">(${vid ? 'clip' : 'picture'})</span></div>
+        <div class="row" style="gap:8px"><span class="small muted" style="width:44px">How:</span>
+          <select data-r="${esc(x.file)}" style="flex:1;min-width:180px">${opts.map(([v, t]) => `<option value="${v}" ${roles[x.file] === v ? 'selected' : ''}>${t}</option>`).join('')}</select>
+          <i class="tip">i<span class="tt"><b>Show it while I talk:</b> it pops up beside you (never over your face).<br><b>Full screen:</b> the video cuts to it and your voice carries on.<br>Not sure? Let Claude decide.</span></i></div>
+        <div class="row" style="gap:8px"><span class="small muted" style="width:44px">When:</span>
+          <input type="text" data-x="${esc(x.file)}" value="${esc(notes[x.file] || '')}" placeholder="e.g. when I talk about my results (or leave empty)" style="flex:1;min-width:180px"></div>
+      </div>
+      <button class="btn danger small" style="padding:6px 12px" data-unextra="${esc(x.file)}">Remove</button></div>`;
+  }).join('');
+  $('label[for="extraFile"]').classList.toggle('hidden', xs.length >= 3);
+  $('#extrasCount').textContent = xs.length >= 3 ? "That's the maximum of 3. Remove one to add another." : `Up to 3 (${3 - xs.length} left).`;
+  $$('[data-unextra]').forEach((b) => b.onclick = async () => renderExtras(await post(`/api/jobs/${currentId}/unextra`, { file: b.dataset.unextra })));
+  wireMoves(j);
+}
+$('#extraFile').onchange = async (e) => {
+  for (const f of e.target.files) {
+    try { renderExtras(await sendFile(`/api/jobs/${currentId}/extra?name=${encodeURIComponent(f.name)}`, f, 'Uploading ' + f.name)); toast(`Added ${f.name}`); }
+    catch (err) { alert(err.message); break; }
+  }
+  e.target.value = '';
+};
+function wireMoves(j) {
+  $$('[data-mv]').forEach((b) => b.onclick = async () => {
+    const kind = b.dataset.mv, list = (kind === 'main' ? j.mains : j.extras).map((x) => x.file), i = list.indexOf(b.dataset.f), k = i + +b.dataset.d;
+    if (k < 0 || k >= list.length) return; [list[i], list[k]] = [list[k], list[i]];
+    const nj = await post(`/api/jobs/${currentId}/order`, kind === 'main' ? { main: list } : { extras: list });
+    kind === 'main' ? renderMains(nj) : renderExtras(nj); Object.assign(j, nj);
+  });
+}
+function showJob(j) {
+  renderMains(j); renderExtras(j);
+  $('#copyBtn').disabled = !j; $('#copyHint').textContent = j ? 'Then follow steps 2 to 6 above.' : 'Add your video in step 1 first.';
+}
+
+// step 3: prepare the job, copy the message
+$('#copyBtn').onclick = async () => {
+  if (!currentId) return;
+  const plats = $$('#plats .chip.on').map((c) => c.dataset.v);
+  if (!plats.length) { alert('Please tick at least one app in "Where will you post them?"'); return; }
+  try {
+    const j = await post(`/api/jobs/${currentId}/prepare`, { count: +$('#count').value, platforms: plats, captions: groupVal('captions') === 'true',
+      graphics: groupVal('graphics'), music: groupVal('music'), full: groupVal('full') === 'true', variants: +groupVal('variants') || 0, notes: $('#notes').value.trim(),
+      extraNotes: Object.fromEntries($$('#extrasList input[data-x]').map((i) => [i.dataset.x, i.value.trim()])),
+      extraRoles: Object.fromEntries($$('#extrasList select[data-r]').map((i) => [i.dataset.r, i.value])) });
+    const ok = await copy(j.message);
+    $('#msg').textContent = j.message; $('#msgWrap').classList.remove('hidden');
+    toast(ok ? 'Copied! Now paste it into Claude (step 4).' : 'Copy the message below into Claude.');
+    $('#copyBtn').textContent = 'Copy my message again';
+    renderCurrent(j);
+  } catch (e) { alert(e.message); }
+};
+
+// job display
+const STATE = { uploaded: ['Not sent yet', 'wait'], sent: ['Waiting for you to paste it into Claude', 'wait'], working: ['Claude is working', 'working'], done: ['Finished', 'done'] };
+function postSections(md) {
+  const out = {}; if (!md) return out; let cur = null;
+  for (const line of md.split(/\r?\n/)) { const h = /^##\s+(.+)/.exec(line); if (h) { cur = h[1].trim(); out[cur] = ''; } else if (cur) out[cur] += line + '\n'; }
+  for (const k in out) out[k] = out[k].trim();
+  // "Same as Instagram" -> copy the Instagram caption itself
+  const ig = Object.keys(out).find((k) => /instagram/i.test(k));
+  for (const k in out) if (ig && k !== ig && /^same as instagram/i.test(out[k])) out[k] = out[ig];
+  return out;
+}
+function jobHTML(j, big) {
+  const [label, cls] = STATE[j.state] || [j.state, ''];
+  const st = j.status || {}, pct = Math.max(0, Math.min(100, st.percent ?? 0));
+  const stale = j.state === 'working' && j.statusAge > 10 * 60 * 1000;
+  let h = `<div class="card" id="job-${j.id}">
+    <div class="row" style="justify-content:space-between"><h2 style="margin:0">${esc(j.originalName || 'Your video')}</h2><span class="pill ${cls}">${label}</span></div>`;
+  if (j.state === 'sent') h += `<div class="notice warn">⏳ <b>Waiting for Claude.</b> Paste the message into the Claude app (Code, in the ignite-reel-kit folder) and press Enter. If Claude is asking to <b>Allow</b> something, click Allow.
+      <div style="margin-top:8px"><button class="btn ghost small" style="padding:8px 14px" data-copy="${esc(j.message || '')}">Copy the message again</button></div></div>`;
+  if (j.state === 'working' || (j.state === 'sent' && st.percent)) h += `<div style="margin:14px 0 6px" class="row"><b>${esc(st.step || 'Working')}</b><span class="muted small">${pct}%</span>
+      <i class="tip">i<span class="tt">Claude updates this as it goes. Rendering (building the final video) is the slowest part and can sit still for a few minutes: that's normal.</span></i></div>
+      <div class="bar"><i style="width:${pct}%"></i></div><p class="muted small">${esc(st.detail || '')}</p>
+      <div class="notice small">Keep the Claude app open. ${stale ? '<b>No update for 10+ minutes:</b> check whether Claude is waiting for you to click <b>Allow</b>.' : 'If it seems stuck, check whether Claude is asking you to <b>Allow</b> something.'}</div>`;
+  const reels = j.results?.reels || [];
+  if (reels.length) {
+    if (j.results.message) h += `<div class="notice good">${esc(j.results.message)}</div>`;
+    h += `<div class="reels">` + reels.map((r, i) => {
+      const sec = postSections(r.postText), caps = Object.keys(sec).filter((k) => /instagram|tiktok|facebook|youtube|pinned/i.test(k));
+      const src = '/file?path=' + encodeURIComponent(r.file);
+      return `<div class="reel">${r.exists ? `<video src="${src}#t=0.6" controls preload="metadata" playsinline></video>` : `<div class="notice warn" style="margin:12px">This video file is missing.</div>`}
+        <div class="body"><h3>${esc(r.title || 'Reel ' + (i + 1))}</h3>
+          ${r.hook ? `<div class="small"><span class="muted">Hook:</span> ${esc(r.hook)}</div>` : ''}${r.length ? `<div class="small muted">${esc(r.length)} long</div>` : ''}
+          <div class="row"><a class="btn small" style="padding:9px 14px;text-decoration:none" href="${src}&dl=1">Download</a>
+            <button class="btn ghost small" style="padding:9px 14px" data-open="${j.id}">Show in folder</button></div>
+          ${caps.length ? `<div><div class="small muted" style="margin-bottom:6px">Copy your caption <i class="tip">i<span class="tt">Each button copies the ready-written caption and hashtags for that app. Paste it when you post the reel.</span></i></div>
+            <div class="capt">${caps.map((k) => `<button class="chip small" data-copy="${esc(sec[k])}">${esc(k)}</button>`).join('')}</div></div>` : ''}
+          ${(r.variants || []).length ? `<div class="small">Hook test versions: ${r.variants.map((v, n) => `<a href="/file?path=${encodeURIComponent(v)}&dl=1">version ${n + 2}</a>`).join(' · ')}</div>` : ''}
+          <details><summary class="small">Change something</summary>
+            <p class="small muted">Say what you want in normal words, e.g. "make the captions bigger" or "use a different hook". Then paste the message into the <b>same Claude chat</b>.</p>
+            <div class="notice warn small" style="margin:8px 0">⏱️ <b>Even a small change takes a while</b> (often 10 to 20 minutes), because Claude has to rebuild and re-render the whole reel, not just the bit you changed. <b>Put all your changes in one message</b> rather than one at a time.</div>
+            <textarea data-note="${i}" placeholder="What should change?"></textarea>
+            <button class="btn ghost small" style="margin-top:8px;padding:8px 14px" data-change="${j.id}" data-reel="${esc(r.title || '')}" data-i="${i}">Make a change message</button></details>
+        </div></div>`;
+    }).join('') + `</div>`;
+  }
+  if (!big) h += `<div class="row" style="margin-top:12px"><button class="btn danger small" style="padding:8px 14px" data-del="${j.id}">Remove from this list</button>
+    <i class="tip">i<span class="tt">Removes this job from the dashboard and deletes the uploaded copy of your video. Finished reels in the video-projects folder are kept.</span></i></div>`;
+  return h + `</div>`;
+}
+function wire(root) {
+  $$('[data-copy]', root).forEach((b) => b.onclick = async () => { await copy(b.dataset.copy); toast('Copied!'); });
+  $$('[data-open]', root).forEach((b) => b.onclick = () => post(`/api/jobs/${b.dataset.open}/open`));
+  $$('[data-del]', root).forEach((b) => b.onclick = async () => { if (confirm('Remove this from the list?')) { await post(`/api/jobs/${b.dataset.del}/delete`); refresh(); } });
+  $$('[data-change]', root).forEach((b) => b.onclick = async () => {
+    const note = $(`textarea[data-note="${b.dataset.i}"]`, b.closest('.reel')).value;
+    try { const j = await post(`/api/jobs/${b.dataset.change}/change`, { reel: b.dataset.reel, note }); await copy(j.message); toast('Copied! Paste it into the same Claude chat.'); refresh(); }
+    catch (e) { alert(e.message); }
+  });
+}
+function renderCurrent(j) {
+  j = j || S?.jobs?.find((x) => x.id === currentId);
+  const el = $('#current');
+  if (!j || j.state === 'uploaded') { el.innerHTML = ''; return; }
+  if (el.contains(document.activeElement) && document.activeElement.tagName === 'TEXTAREA') return; // don't wipe typing
+  el.innerHTML = `<h2 style="margin-top:28px">Your current video</h2>` + jobHTML(j, true); wire(el);
+}
+function renderJobs() {
+  const el = $('#jobs'); if (el.contains(document.activeElement) && document.activeElement.tagName === 'TEXTAREA') return;
+  const jobs = (S?.jobs || []).filter((j) => j.state !== 'uploaded');
+  el.innerHTML = jobs.length ? jobs.map((j) => jobHTML(j)).join('') : `<div class="card muted">Nothing yet. Go to <a href="#" onclick="showTab('make');return false">Make reels</a> to start.</div>`;
+  wire(el);
+}
+async function refresh() {
+  try {
+    S = await (await fetch('/api/state')).json();
+    if (!refresh.done) { fillBrand(S.brand); refresh.done = true; }
+    $('#kitName').textContent = S.kitName; $('#kitPath').textContent = S.kitFolder; $('#kitPath2').textContent = S.kitFolder;
+    $('#musicCounts').textContent = Object.entries(S.music).map(([k, n]) => `${k}: ${n} song${n === 1 ? '' : 's'}`).join(' · ');
+    musicWarn();
+    const cur = S.jobs.find((x) => x.id === currentId);
+    if (!refresh.shown) { refresh.shown = true; if (cur && cur.state === 'uploaded') showJob(cur); else showJob(null); }
+    renderCurrent(); if (!$('#tab-mine').classList.contains('hidden')) renderJobs();
+  } catch { /* dashboard window closed */ }
+}
+refresh(); setInterval(refresh, 4000);
+</script>
+</body>
+</html>

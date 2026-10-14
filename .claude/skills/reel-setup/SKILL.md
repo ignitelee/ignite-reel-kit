@@ -1,0 +1,86 @@
+---
+name: reel-setup
+description: First-time setup of the IGNITE Reel Kit on the user's Mac or Windows computer - checks and installs the tools (Node, Git, FFmpeg, uv, kit packages, video renderer, speech model), builds their brand kit (logo, colours, defaults) into brand/brand.json, and opens the dashboard. Use when brand/brand.json is missing, when the user says "set up", "install", "it's not working", or after they download the kit.
+---
+
+# IGNITE Reel Kit setup
+
+The user is probably not technical. Talk in plain English, one short step at a time, and explain why
+before each install ("this lets the kit cut video"). They approve each command; never bypass approvals.
+Never ask for or type passwords. If something needs a password (Homebrew on Mac, an admin prompt on
+Windows), give them the exact command to paste into Terminal / PowerShell themselves, then wait.
+
+Their own Claude account only: the kit runs on the Claude Code login of the person at this computer and
+needs no Anthropic API key. Never ask for, store or use an API key or login belonging to anyone else
+(e.g. the IB who shared the kit). If `ANTHROPIC_API_KEY` is set in their environment or `.env`, tell them
+it bills that key's owner and ask whether it is their own before continuing.
+
+## 1. Check the computer
+
+Run `node scripts/reel-doctor.mjs`. (If `node` itself is missing, start with step 2.) Tell them in one
+line what's already fine and what's missing. Then fix only what's missing, in this order.
+
+## 2. Install missing tools
+
+**Windows** (winget is built into Windows 10/11):
+| Missing | Command |
+| --- | --- |
+| Node.js | `winget install -e --id OpenJS.NodeJS.LTS --accept-source-agreements --accept-package-agreements` |
+| Git | `winget install -e --id Git.Git --accept-source-agreements --accept-package-agreements` |
+| FFmpeg | `winget install -e --id Gyan.FFmpeg --accept-source-agreements --accept-package-agreements` |
+| uv | `winget install -e --id astral-sh.uv --accept-source-agreements --accept-package-agreements` |
+After winget installs, Windows only sees the new tools in a NEW window: ask them to fully close and reopen
+Claude Code, then say "carry on with setup". (Check `brand/brand.json` is still missing to know where you are.)
+
+**Mac**: tools come from Homebrew. If `brew --version` fails, Homebrew needs their Mac password, so ask
+them to open the Terminal app and paste this themselves, then follow its prompts:
+`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
+On Apple Silicon Macs it ends by printing two `echo ... >> ~/.zprofile` / `eval` lines to run: ask them to
+run those too, then close and reopen Claude Code. Then: `brew install node git ffmpeg uv`.
+
+## 3. Kit packages, renderer and speech model (both systems)
+
+1. `npm ci` (installs the kit's own packages; a minute or two).
+2. `npx hyperframes browser ensure` (downloads the video renderer once).
+3. Speech model, downloaded once (~1.6 GB, a few minutes on normal broadband). Tell them it's a one-off:
+   `uv run --quiet --python 3.12.15 --with faster-whisper==1.2.1 python -c "from faster_whisper import WhisperModel; WhisperModel('large-v3-turbo', device='cpu', compute_type='int8'); print('speech model ready')"`
+4. `npm test` should pass. Run `node scripts/reel-doctor.mjs` again: everything but the brand should be OK.
+
+## 4. Their brand kit (writes brand/brand.json)
+
+Start from `brand/brand.example.json`. Ask, a few at a time, using AskUserQuestion where it helps:
+1. Their name (for captions and greetings).
+2. **Their logo**: ask them to drag their logo file into the chat (see below). It appears as a small badge in
+   the top corner of every reel. No logo yet is fine: they can add one later.
+3. **Their brand colour**: the one accent colour used for the spoken word in captions, key words and
+   glows. Suggest the main colour from their logo (tell them the hex code and show it in words, e.g.
+   "bright orange"); or let them pick from a few options with AskUserQuestion. Default teal #13E6BA.
+4. Website or handle (optional, only used in captions or when they ask for it on screen).
+5. What they usually ask people to do (optional, e.g. "DM me 'START'"): used in post captions, never as a
+   fixed bar on the video.
+6. Defaults: platforms (Instagram, TikTok, Facebook, YouTube Shorts), captions on/off, graphics
+   none/light/full, music mood (upbeat/inspiring/calm/emotional/none).
+
+**Their logo:** copy it into `brand/user/` and set `"logo": "user/<file>"`. It must have a transparent
+background so it sits cleanly on the video. If it's a JPG or has a white/coloured box behind it, make a
+transparent PNG (e.g. `ffmpeg -i in.jpg -vf "colorkey=white:0.25:0.05,format=rgba" brand/user/logo.png`),
+show them the result and confirm. Keep it under ~1000 px wide.
+
+Write `brand/brand.json`, then read it back to them in 4-5 plain lines.
+
+## 5. Music (optional)
+
+Explain the kit has no music (licences). They can drop tracks into `brand/music/<mood>/` (see
+`brand/music/README.md`): YouTube Audio Library or Pixabay Music are good free sources (check each licence).
+
+## 6. Finish
+
+Run `node scripts/reel-doctor.mjs` (all OK). Then:
+1. `npm run shortcut`: puts an **IGNITE Reels** icon on their desktop that opens the dashboard.
+2. Start the dashboard in the background (`npm run dashboard`, run it in the background so this chat stays
+   free). It opens in their browser at http://localhost:4747.
+3. Tell them, in three short lines: they're set up; the dashboard is where they make reels (drop a video,
+   pick options, press "Copy my message", paste it back into Claude here, click Allow when asked); next time
+   they double-click **IGNITE Reels** on the desktop and leave the small black window open.
+
+If they already filled in their brand in step 4, it's in the dashboard's "My brand" tab too (same file).

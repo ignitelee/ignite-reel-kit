@@ -1,0 +1,13 @@
+{
+  "your_name": "Your Name",
+  "logo": "user/logo.png",
+  "accent_color": "#13E6BA",
+  "website": "",
+  "cta": "",
+  "voice": "plain, direct, honest, friendly, no hype",
+  "default_platforms": ["instagram", "tiktok"],
+  "captions": true,
+  "graphics": "full",
+  "music_mood": "calm",
+  "risk_line": "Trading involves risk. Only trade with money you can afford to lose."
+}
