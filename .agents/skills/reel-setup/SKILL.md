@@ -5,10 +5,23 @@ description: First-time setup of the IGNITE Reel Kit on the user's Mac or Window
 
 # IGNITE Reel Kit setup
 
-The user is probably not technical. Talk in plain English, one short step at a time, and explain why
-before each install ("this lets the kit cut video"). They approve each command; never bypass approvals.
-Never ask for or type passwords. If something needs a password (Homebrew on Mac, an admin prompt on
-Windows), give them the exact command to paste into Terminal / PowerShell themselves, then wait.
+The user is probably not technical and may not read long messages. Talk in plain English, one short step
+at a time, and explain why in one line before each install ("this lets the kit cut video").
+
+**Run every command yourself.** The user only clicks **Allow** when Claude Code asks; never bypass
+approvals. Never show them a command and expect them to know what to do with it. Before your first command,
+tell them: "I'll run each step for you. Claude will pop up asking you to Allow: click Allow. If Windows asks
+'Do you want to allow this app to make changes to your device?', click Yes."
+
+Never ask for or type passwords. Only if a command truly needs them at the keyboard (Homebrew on Mac asks
+for their Mac password) do they run it themselves, and then give click-by-click steps, e.g.:
+- **Mac:** "1. Press Cmd + Space. 2. Type Terminal and press Enter. 3. Click inside the Terminal window.
+  4. Paste with Cmd + V and press Enter. 5. When it asks for a password, type your Mac login password
+  (nothing appears as you type, that's normal) and press Enter. 6. Come back here and tell me when it's done."
+- **Windows:** "1. Press the Windows key. 2. Type PowerShell. 3. Click Windows PowerShell. 4. Right-click
+  inside the blue window to paste, then press Enter. 5. Click Yes if Windows asks to allow changes.
+  6. Come back here and tell me when it's done." (Never tell them to paste into the Windows search bar.)
+Give the command in a code block on its own, after the steps, so it's easy to copy.
 
 Their own Claude account only: the kit runs on the Claude Code login of the person at this computer and
 needs no Anthropic API key. Never ask for, store or use an API key or login belonging to anyone else
@@ -29,11 +42,13 @@ line what's already fine and what's missing. Then fix only what's missing, in th
 | Git | `winget install -e --id Git.Git --accept-source-agreements --accept-package-agreements` |
 | FFmpeg | `winget install -e --id Gyan.FFmpeg --accept-source-agreements --accept-package-agreements` |
 | uv | `winget install -e --id astral-sh.uv --accept-source-agreements --accept-package-agreements` |
-After winget installs, Windows only sees the new tools in a NEW window: ask them to fully close and reopen
-Claude Code, then say "carry on with setup". (Check `brand/brand.json` is still missing to know where you are.)
+Run these yourself (they click Allow, and Yes if Windows asks to allow changes). After winget installs,
+Windows only sees the new tools in a NEW window, so tell them exactly: "Now close the Claude app completely
+(right-click its icon at the bottom of the screen and choose Close window), open it again, click Code, choose
+the ignite-reel-kit folder, and type: carry on with setup". (Check `brand/brand.json` is still missing to know where you are.)
 
 **Mac**: tools come from Homebrew. If `brew --version` fails, Homebrew needs their Mac password, so ask
-them to open the Terminal app and paste this themselves, then follow its prompts:
+them to run this one themselves, with the click-by-click Mac steps above:
 `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
 On Apple Silicon Macs it ends by printing two `echo ... >> ~/.zprofile` / `eval` lines to run: ask them to
 run those too, then close and reopen Claude Code. Then: `brew install node git ffmpeg uv`.

@@ -24,14 +24,19 @@ too, kept in a `.env` file that is never uploaded. You don't need any of them to
 
 ## Install (one message)
 
-Open Claude Code and paste this:
+Open the Claude app, click **Code**, and paste this:
 
-> Please set up the IGNITE Reel Kit for me. Download it with git from
-> https://github.com/ignitelee/ignite-reel-kit into my Documents folder (if git isn't installed yet,
-> install it first). Then read the file `.claude/skills/reel-setup/SKILL.md` inside the kit and follow it
-> step by step. Explain each step in plain English and wait for my approval before running anything.
+> Please set up the IGNITE Reel Kit for me. I'm not technical, so keep every message short and simple.
+> Run every command yourself: I'll just click Allow when you ask. Never ask me to copy or type a command
+> unless it truly can't be run by you (for example it needs my computer password). If that happens, tell
+> me exactly where to paste it, click by click (which app to open, how to open it, where to click), and
+> that any "Do you want to allow this app to make changes?" box needs Yes.
+> First, if git isn't installed, install it (on Windows: winget, then tell me to close and reopen the
+> Claude app and paste this message again). Then download the kit with git from
+> https://github.com/ignitelee/ignite-reel-kit into my Documents folder, read the file
+> `.claude/skills/reel-setup/SKILL.md` inside it, and follow it step by step.
 
-Claude installs the tools, downloads the speech model (about 1.6 GB, once), and asks for your logo and
+Claude runs each step for you (you click **Allow**), installs the tools, downloads the speech model (about 1.6 GB, once), and asks for your logo and
 your brand colour.
 
 ## Making reels
