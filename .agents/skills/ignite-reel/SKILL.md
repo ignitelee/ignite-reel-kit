@@ -216,8 +216,10 @@ tell them how to add tracks (brand/music/README.md). `"music": false` if they sa
 
 ## Trial-reel variants
 
-Up to 5 versions that differ only in the OPENING (cold-open line, hook text or headline), so
-the test shows which hook works. Name them by angle (`v2-question`...), render with `--variants`, give
+The dashboard recommends 5 ("5 videos out of 1"): N versions = the main reel + N-1 variants, all the
+same reel except the OPENING (cold-open line, hook text or headline). Make every opening a genuinely
+different angle from your hook list (question, bold claim, story, number, call-out), not small rewordings,
+so the test shows which hook works. Name them by angle (`v2-question`...), render with `--variants`, give
 each its own caption line 1 in POST.md, and tell them to post as trial reels a day or so apart and keep
 the one with the best 3-second hold.
 

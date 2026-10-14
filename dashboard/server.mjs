@@ -96,7 +96,7 @@ function jobInstructions(job) {
     `- Platforms: ${plat}. One POST.md per reel with a caption for each of these platforms (use the humanizer skill).`,
     `- Captions on the video: ${o.captions === false ? 'NO' : 'yes'}. Graphics: ${o.graphics || 'full'}.`,
     `- Music: ${o.music && o.music !== 'none' ? `${o.music} mood (brand/music/${o.music}/), ${o.musicLevel || 'quiet'} under the voice` : 'none'}.`,
-    `- Hook test versions (trial reels) per reel: ${o.variants ? o.variants : 'none'}.`,
+    `- Trial reel versions per reel (same reel, different openings): ${o.variants ? `${o.variants} in total (the main reel + ${o.variants - 1} variants with different hooks), listed in results.json "variants" and in POST.md` : 'none'}.`,
     `- Their logo badge: ${o.logo === 'always' ? 'always show it' : o.logo === 'never' ? 'never show it ("logo": false)' : 'auto: only if the video is about their business, trading or IGNITE'}.`,
     o.notes ? `- Their notes: ${o.notes}` : null,
     ...extraLines(job),
