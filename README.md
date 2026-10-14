@@ -33,7 +33,8 @@ Open the Claude app, click **Code**, and paste this:
 > that any "Do you want to allow this app to make changes?" box needs Yes.
 > First, if git isn't installed, install it (on Windows: winget, then tell me to close and reopen the
 > Claude app and paste this message again). Then download the kit with git from
-> https://github.com/ignitelee/ignite-reel-kit into my Documents folder, read the file
+> https://github.com/ignitelee/ignite-reel-kit into my Documents folder (if an ignite-reel-kit folder is
+> already there from an earlier try, update it with git pull instead), read the file
 > `.claude/skills/reel-setup/SKILL.md` inside it, and follow it step by step.
 
 Claude runs each step for you (you click **Allow**), installs the tools, downloads the speech model (about 1.6 GB, once), and asks for your logo and
