@@ -233,13 +233,6 @@ details summary{cursor:pointer;font-weight:700}
         </div>
       </div>
       <div class="opt">
-        <label class="t">Stock footage <i class="tip">i<span class="tt">Short free video clips (for example a pub, a beach, a gym or a laptop) shown for a couple of seconds when you describe something, while your voice carries on. It gives the reel a different feel. Claude only adds 1 to 3, never during personal moments. Needs a free Pexels key (set up once; ask Claude "turn on stock footage").</span></i></label>
-        <div class="chips" data-group="broll">
-          <button class="chip on" data-v="some">A little</button>
-          <button class="chip" data-v="none">None</button>
-        </div>
-      </div>
-      <div class="opt">
         <label class="t">Show my logo <i class="tip">i<span class="tt">Your logo sits small in the top corner. "Auto" shows it only when the video is about your business or trading, and leaves it off personal and lifestyle videos, where it adds nothing. Or choose Always / Never.</span></i></label>
         <div class="chips" data-group="logo">
           <button class="chip on" data-v="auto">Auto</button>
@@ -306,7 +299,7 @@ details summary{cursor:pointer;font-weight:700}
   <h1>My library</h1>
   <p class="sub">Your own photos and clips, saved once and reused in your reels. It's what makes your reels look like YOU instead of everyone else.</p>
   <div class="card">
-    <h2>How it works <i class="tip">i<span class="tt">Everything here stays on your computer and is kept when the kit updates. Claude looks through your library on every reel and uses what fits what you're saying, before any stock footage.</span></i></h2>
+    <h2>How it works <i class="tip">i<span class="tt">Everything here stays on your computer and is kept when the kit updates. Claude looks through your library on every reel and uses what fits what you're saying.</span></i></h2>
     <ol class="small" style="margin:8px 0 0;padding-left:20px;line-height:1.8">
       <li><b>Add your pictures and clips:</b> you at work, your car, your office, the gym, family, your team, your results, places you go, your own B-roll.</li>
       <li><b>Write a short note</b> on each one (optional): what it is and when to use it, e.g. "me at the gym, use when I talk about discipline".</li>
@@ -407,7 +400,7 @@ details summary{cursor:pointer;font-weight:700}
     <p><b>Anything you want SHOWN while you talk</b> (screenshots, photos, phone recordings, short clips): add up to 3 in <b>1b Extra pictures and clips</b>. For each one, choose <b>How</b> (beside you or full screen) and type <b>When</b> it should appear, e.g. "when I talk about my results". Not sure? Choose "Let Claude decide".</p>
     <p>Your <b>logo</b> doesn't go in either: it's in <b>My brand</b> and goes on every reel automatically.</p></details>
   <details><summary>How do I make my reels look more like me?</summary>
-    <p>Use the <b>My library</b> tab. Add photos and clips of your life and work once (your car, office, gym, family, team, results, your own B-roll) with a short note on when to use each. Claude uses the ones that fit in every reel, before any stock footage. The notes are optional: without one, Claude looks at the picture to see what it shows.</p></details>
+    <p>Use the <b>My library</b> tab. Add photos and clips of your life and work once (your car, office, gym, family, team, results, your own B-roll) with a short note on when to use each. Claude uses the ones that fit in every reel. The notes are optional: without one, Claude looks at the picture to see what it shows.</p></details>
   <details><summary>Does it post to my Instagram or TikTok?</summary>
     <p>No. It never posts anything. You download the reel and post it yourself, with the caption from this page.</p></details>
   <details><summary>How do I open this page again?</summary>
@@ -647,7 +640,7 @@ $('#copyBtn').onclick = async () => {
   if (!plats.length) { alert('Please tick at least one app in "Where will you post them?"'); return; }
   try {
     const j = await post(`/api/jobs/${currentId}/prepare`, { count: +$('#count').value, platforms: plats, captions: groupVal('captions') === 'true',
-      graphics: groupVal('graphics'), music: groupVal('music'), full: groupVal('full') === 'true', variants: +groupVal('variants') || 0, broll: groupVal('broll'), logo: groupVal('logo'), notes: $('#notes').value.trim(),
+      graphics: groupVal('graphics'), music: groupVal('music'), full: groupVal('full') === 'true', variants: +groupVal('variants') || 0, logo: groupVal('logo'), notes: $('#notes').value.trim(),
       extraNotes: Object.fromEntries($$('#extrasList input[data-x]').map((i) => [i.dataset.x, i.value.trim()])),
       extraRoles: Object.fromEntries($$('#extrasList select[data-r]').map((i) => [i.dataset.r, i.value])) });
     const ok = await copy(j.message);

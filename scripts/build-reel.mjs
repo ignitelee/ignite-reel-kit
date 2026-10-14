@@ -475,7 +475,7 @@ for (const g of pops) {
     tw(`#${id}-vw`, { clipPath: 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.5, ease: 'power3.inOut' }, t0);
     to(`#${id}-vw`, { clipPath: 'inset(0% 0% 0% 100%)', duration: 0.45, ease: 'power3.inOut' }, end - 0.45);
     if (p.text) { inner = `<div class="cliptext" style="font-size:${56 * sz}px">${rich(p.text)}</div>`; enter(`#${id} .cliptext`, t0 + 0.4); }
-    // slow drift so stock footage never looks static ("zoom": false to turn off)
+    // slow drift so B-roll never looks static ("zoom": false to turn off)
     if (p.zoom !== false) tw(`#${id}-v`, { scale: 1 }, { scale: p.zoom_to ?? 1.08, duration: r3(end - t0), ease: 'none' }, t0);
     sfx('whoosh', t0);
   } else if (p.type === 'glass') {

@@ -27,8 +27,7 @@
     "validate:footage": "node .claude/skills/short-form-edit/scripts/validate-footage.mjs",
     "preflight:all": "node scripts/preflight-all.mjs",
     "transcribe:elevenlabs": "node scripts/transcribe-elevenlabs.mjs",
-    "logo": "node scripts/find-logo.mjs",
-    "broll": "node scripts/broll.mjs"
+    "logo": "node scripts/find-logo.mjs"
   },
   "engines": {
     "node": ">=22"

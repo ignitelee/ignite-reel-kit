@@ -97,21 +97,12 @@ show them the result and confirm. Keep it under ~1000 px wide.
 
 Write `brand/brand.json`, then read it back to them in 4-5 plain lines.
 
-## 5. Stock footage (optional, 2 minutes)
-
-Ask: "Want free stock video clips (a pub, a beach, a gym...) added to your reels now and then? It needs a
-free Pexels account." If yes: they open https://www.pexels.com/api in their browser, sign up (their own
-account; you never sign up for them or type their details), and copy "Your API key". Then create `.env` in
-the kit folder from `.env.example` if it doesn't exist, open it for them in Notepad / TextEdit, and ask them
-to paste the key after `PEXELS_API_KEY=` and save. Test: `npm run broll -- video-projects/demo "beach" --list`
-should list clips. Never ask them to paste the key into the chat. If no: fine, reels just won't use stock clips.
-
-## 6. Music (optional)
+## 5. Music (optional)
 
 Explain the kit has no music (licences). They can drop tracks into `brand/music/<mood>/` (see
 `brand/music/README.md`): YouTube Audio Library or Pixabay Music are good free sources (check each licence).
 
-## 7. Finish
+## 6. Finish
 
 Run `node scripts/reel-doctor.mjs` (all OK). Then:
 1. `npm run shortcut`: puts an **IGNITE Reels** icon on their desktop that opens the dashboard.

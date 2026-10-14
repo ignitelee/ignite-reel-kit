@@ -121,8 +121,7 @@ and the reel feels designed for this video, not filled from a template.
 | **Liquid glass pop-up** | a short point, a name, a number, a brand, a quick "not this / this": beside them in clean space, never over the face or captions | `glass` (side or top position) |
 | **Real logo** | they NAME a brand, app, company or platform (Instagram, Netflix, Spotify, Uber, Apple, YouTube...) | `glass` item with `"logo": "si:<slug>"`: find slugs with `npm run logo -- <brand>` (3,400+ real logos, offline). Not found -> a fitting Material icon; never draw or invent a logo |
 | **Full-screen card** | ONE big moment (the key number, the big reveal, the final line): use sparingly, max 1-2 per reel | `title`, `stat` or a diagram with `"pos": "card"` |
-| **B-roll / screen recording** | showing the actual thing they talk about (an app, the Hub, a place): their own uploaded clips first, then the IGNITE library (IGNITE videos only), then free stock footage | `phone` or `clip` |
-| **Stock B-roll cutaway** | a place, activity or scene they DESCRIBE ("down the pub", "on the beach", "in the gym", "on my laptop"): a short full-screen cutaway, voice carries on | `{"type": "clip", "pos": "card", "src": "assets/broll/<name>.mp4", "at", "until"}` |
+| **B-roll / screen recording** | showing the actual thing they talk about (an app, the Hub, a place): their own uploaded clips and their library first, then the IGNITE library (IGNITE videos only) | `phone` or `clip` |
 | **Chip / highlight** | one punchy phrase on screen | `chip`, `stack`, `hl` |
 
 **Rules that make it look designed:**
@@ -141,16 +140,12 @@ and the reel feels designed for this video, not filled from a template.
 - **Their own library first:** `brand/my-library/library.json` lists the photos and clips they saved (with notes
   like "me at the gym, use when I talk about discipline"). On every reel, check it and use what fits BEFORE
   anything else: their own visuals make the reel theirs. Order: files they added for this job > their library >
-  IGNITE library (IGNITE/trading videos only) > stock B-roll. No note? Look at the picture (or a frame of the
+  IGNITE library (IGNITE/trading videos only). There is no stock footage: if nothing fits, use a graphic
+  or stay on them. No note? Look at the picture (or a frame of the
   clip) to see what it shows. Copy what you use into the project assets.
-- **Stock B-roll** (`npm run broll -- video-projects/<name> "search words" --name <x>`, free Pexels clips,
-  needs the user's own PEXELS_API_KEY in .env; if it prints NO_PEXELS_KEY, skip stock B-roll silently and
-  mention once at the end that they can turn it on): 1-3 per reel, 1.5-3 s each, only where it shows what
-  they describe and gives the reel a different feel. Never during emotional or personal lines (their face
-  matters more), never two in a row, never in the hook. Search simple concrete words ("friends pub",
-  "laptop beach", "gym workout"); use `--list` to see options, then look at a frame of the downloaded clip
-  before using it (stock clips can change shot partway; pick `media_start` to use the right part). The
-  dashboard's "Stock footage" choice (none / a little) wins.
+- **B-roll from their library:** a short full-screen cutaway (1.5-3 s, the voice carries on) when they
+  describe a place or activity their library shows: `{"type": "clip", "pos": "card", "src": "assets/<file>", "at", "until"}`
+  (it drifts slowly by itself). Never during emotional lines, never two in a row, never in the hook.
 - **Their logo badge only when it's about their brand:** show the corner logo on videos about their
   business, trading or IGNITE; set `"logo": false` on personal, lifestyle and general videos (it adds
   nothing there). The dashboard's "Show my logo" choice (auto / always / never) wins; "auto" = this rule.
