@@ -17,6 +17,7 @@ import { randomUUID } from 'node:crypto';
 const KIT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PUB = join(KIT, 'dashboard', 'public');
 const JOBS = join(KIT, 'dashboard', 'jobs');
+const CAR = join(KIT, 'dashboard', 'carousels'); // Carousel Builder jobs
 const BRAND = join(KIT, 'brand', 'brand.json');
 const EXAMPLE = join(KIT, 'brand', 'brand.example.json');
 // the user's own library of photos and clips, reused across reels (stays on their computer, kept on updates)
@@ -25,7 +26,7 @@ const LIBJSON = join(LIB, 'library.json');
 const libItems = () => readJSON(LIBJSON, []);
 const PORT = Number(process.env.REEL_DASHBOARD_PORT || 4747);
 const WIN = platform() === 'win32', MAC = platform() === 'darwin';
-mkdirSync(JOBS, { recursive: true });
+mkdirSync(JOBS, { recursive: true }); mkdirSync(CAR, { recursive: true });
 
 // ---------- helpers ----------
 const readJSON = (p, d = null) => { try { return JSON.parse(readFileSync(p, 'utf8')); } catch { return d; } };
@@ -43,7 +44,7 @@ const readBody = (req) => new Promise((ok, bad) => {
 const saveUpload = (req, dest) => new Promise((ok, bad) => {
   const w = createWriteStream(dest); req.pipe(w); w.on('finish', ok); w.on('error', bad); req.on('error', bad);
 });
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png',
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.png': 'image/png',
   '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.mp4': 'video/mp4',
   '.mov': 'video/quicktime', '.md': 'text/plain; charset=utf-8', '.json': 'application/json', '.txt': 'text/plain; charset=utf-8' };
 
@@ -176,11 +177,86 @@ function jobView(id) {
   return { ...j, mains: mains(j), state, status, statusAge, results, video: rel(j.video), message: j.message };
 }
 
+// ---------- carousels ----------
+const carDir = (id) => join(CAR, id);
+const carFile = (id) => join(carDir(id), 'job.json');
+const MAX_IMAGES = 20;
+const HUB_STILLS = join(KIT, 'library', 'hub', 'stills');
+const hubStills = () => (existsSync(HUB_STILLS) ? readdirSync(HUB_STILLS).filter((f) => /\.(jpe?g|png)$/i.test(f)).map((f) => `library/hub/stills/${f}`) : []);
+// Ignite's own pictures for every IB (logos, posters, Hub and Edge screens, lifestyle), with a note on each
+const igniteImages = () => readJSON(join(KIT, 'library', 'ignite', 'images.json'), [])
+  .filter((x) => existsSync(join(KIT, 'library', 'ignite', 'images', x.file))).map((x) => ({ ...x, path: `library/ignite/images/${x.file}` }));
+const END_CTA = {
+  caption: 'the last slide says "Full breakdown in the caption" (with a down arrow), and the caption carries the full detail',
+  usual: 'the last slide uses their usual call to action from brand.json "cta"',
+  save: 'the last slide asks people to save the post for later',
+};
+function carouselInstructions(job) {
+  const o = job.options || {}, d = rel(carDir(job.id)), b = readJSON(BRAND) || {};
+  const ignite = o.mode === 'ignite', imgs = job.images || [];
+  return [
+    `# Carousel job ${job.id} (from the Carousel Builder)`,
+    ``,
+    `The user started this from the IGNITE Reel Kit dashboard. They are not technical: keep anything you say short and`,
+    `plain, and only ask a question if you truly can't continue. Use the ignite-carousel skill (read`,
+    `.claude/skills/ignite-carousel/SKILL.md first) and write every word with the human-speak skill.`,
+    ``,
+    `- What it's for: ${ignite ? 'PROMOTING IGNITE (they are an Ignite partner / IB). Ignite branding; the risk line is added to the last slide automatically. Never promise income or results.' : 'their OWN content (personal brand).'}`,
+    `- Their pictures (${imgs.length}): ${imgs.length ? '' : 'none: use designed slides without photos' + (ignite ? ' and the Hub screens below' : '') + '.'}`,
+    ...imgs.map((x) => `  - \`${rel(join(carDir(job.id), 'images', x.file))}\` ("${x.name}")`),
+    ...(ignite ? [`- IGNITE FACTS: read \`library/ignite/IGNITE.md\` first. Every fact about Ignite must come from it (skip anything marked [CHECK]).`,
+      `- Ignite's own pictures you may use (path: what it shows; layout):`,
+      ...igniteImages().map((x) => `  - \`${x.path}\`: ${x.shows} Use for: ${x.use} (layout: ${x.layout})`),
+      `- Ignite Hub screens you may use (phone layout; what each shows: library/hub/README.md): ${hubStills().map((h) => '`' + h + '`').join(', ')}`] : []),
+    `- How many carousels: ${o.count ? `${o.count}` : 'you decide from their pictures and topic (usually 1; more only if the pictures clearly cover different topics)'}. 5 to 8 slides each (10 at most).`,
+    `- What it's about: ${o.about || '(not given: work it out from the pictures and their brand)'}`,
+    `- Who it's for: ${o.audience || 'everyone'}. Tone: ${o.tone || 'calm and expert'}.`,
+    `- Last slide: ${END_CTA[o.cta] || (o.ctaText ? `the last slide says: "${o.ctaText}"` : END_CTA.caption)}.`,
+    `- Their name: ${b.your_name || '?'}; website/handle: ${b.website || 'none'}; usual call to action: ${b.cta || 'none'}; voice: ${b.voice || 'plain, direct, honest'}.`,
+    o.notes ? `- Their notes: ${o.notes}` : null,
+    ``,
+    `The look (filter "${o.filter || 'luxury'}", logos, colour) is already set on the dashboard: don't change it.`,
+    ``,
+    `## Steps`,
+    `1. Look at every picture (open each image file) before planning.`,
+    `2. Write \`${d}/draft.json\` (format in the skill). Image paths are kit-relative, exactly as listed above.`,
+    `3. \`node scripts/carousel.mjs check ${job.id}\` until there are no errors (fix warnings too where you can).`,
+    `4. \`node scripts/carousel.mjs render ${job.id} --check\` and look at each \`${d}/out/_check/*/sheet.jpg\`: text readable, nothing`,
+    `   cut off, faces not covered, every slide earns its place. Fix and re-check.`,
+    `5. Write \`${d}/status.json\` at each step: \`{"step": "...", "detail": "one short friendly sentence", "percent": 0-100}\`.`,
+    `   Steps: Looking at your pictures (20), Planning the slides (40), Writing the words (60), Checking every slide (85), Ready to check (100).`,
+    `6. Finish with status "Ready to check", percent 100, and tell them in one line: "Done: go back to the Carousel Builder to read`,
+    `   your slides, change any words, then press Make my images." Don't make the final images: they do that after checking.`,
+    `Never post anything online. Stay inside this kit folder.`,
+  ].filter((l) => l !== null).join('\n');
+}
+function carouselMessage(job, note) {
+  const d = rel(carDir(job.id));
+  if (note) return `Carousel job ${job.id}: please change the words: ${note}\nEdit ${d}/draft.json (keep my other edits), check it with node scripts/carousel.mjs check ${job.id}, and set ${d}/status.json to "Ready to check" when done.`;
+  return `Please make my carousels: read ${d}/CAROUSEL.md and follow it.`;
+}
+function carouselView(id) {
+  const j = readJSON(carFile(id)); if (!j) return null;
+  const statusPath = join(carDir(id), 'status.json'), status = readJSON(statusPath);
+  const statusAge = existsSync(statusPath) ? Date.now() - statSync(statusPath).mtimeMs : 0;
+  const draftPath = join(carDir(id), 'draft.json'), draft = readJSON(draftPath), render = readJSON(join(carDir(id), 'render.json'));
+  let state = j.state;
+  if (state === 'sent' && status?.step && status.step !== 'Waiting for Claude') state = 'working';
+  if (draft?.carousels?.length && (status?.percent ?? 100) >= 100) state = 'draft';
+  if (render?.state === 'rendering') state = 'rendering';
+  else if (render?.state === 'done' && render.carousels?.length && state === 'draft') state = 'done';
+  return { ...j, state, status, statusAge, draft, draftAt: existsSync(draftPath) ? statSync(draftPath).mtimeMs : 0, render,
+    hub: j.options?.mode === 'ignite' ? [...igniteImages().map((x) => x.path), ...hubStills()] : [] };
+}
+
 // ---------- brand ----------
 function brandView() {
   const b = readJSON(BRAND) || readJSON(EXAMPLE) || {};
   const logo = b.logo && inKit(join('brand', b.logo));
-  return { ...b, exists: existsSync(BRAND), logoUrl: logo && existsSync(logo) ? `/brand/logo?v=${Math.round(statSync(logo).mtimeMs)}` : null };
+  const has = !!(logo && existsSync(logo)), ig = join(KIT, 'brand', 'ignite', 'ignite-logo.png');
+  return { ...b, exists: existsSync(BRAND), logoUrl: has ? `/brand/logo?v=${Math.round(statSync(logo).mtimeMs)}` : null,
+    // their logo is the Ignite logo itself (Ignite staff): carousels then show it once, not twice
+    logoIsIgnite: has && existsSync(ig) && readFileSync(logo).equals(readFileSync(ig)) };
 }
 
 // ---------- server ----------
@@ -202,7 +278,9 @@ const server = http.createServer(async (req, res) => {
         const dir = join(KIT, 'brand', 'music', m);
         return [m, existsSync(dir) ? readdirSync(dir).filter((f) => /\.(mp3|wav|m4a)$/i.test(f)).length : 0];
       }));
-      return send(res, 200, { brand: brandView(), library: libItems(), jobs, music, platform: platform(), kitFolder: KIT, kitName: basename(KIT) });
+      const carousels = readdirSync(CAR).filter((d) => existsSync(carFile(d))).map((d) => { try { return carouselView(d); } catch (e) { console.error(`carousel ${d}: ${e.message}`); return null; } })
+        .filter(Boolean).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      return send(res, 200, { brand: brandView(), library: libItems(), jobs, carousels, music, platform: platform(), kitFolder: KIT, kitName: basename(KIT) });
     }
 
     if (req.method === 'POST' && p === '/api/brand') {
@@ -308,6 +386,66 @@ const server = http.createServer(async (req, res) => {
         openInOS(f && existsSync(f) ? dirname(f) : jobDir(id)); return send(res, 200, { ok: true });
       }
       if (req.method === 'POST' && m[2] === 'delete') { rmSync(jobDir(id), { recursive: true, force: true }); return send(res, 200, { ok: true }); }
+    }
+
+    if (req.method === 'POST' && p === '/api/carousels/new') {
+      const id = 'c-' + new Date().toISOString().slice(0, 10) + '-' + randomUUID().slice(0, 6);
+      mkdirSync(join(carDir(id), 'images'), { recursive: true });
+      writeJSON(carFile(id), { id, createdAt: Date.now(), state: 'new', images: [], options: await readBody(req) });
+      return send(res, 200, carouselView(id));
+    }
+    const cm = /^\/api\/carousels\/([^/]+)\/(image|unimage|options|prepare|draft|render|change|open|delete)$/.exec(p);
+    if (cm && req.method === 'POST' && isId(cm[1]) && existsSync(carFile(cm[1]))) {
+      const id = cm[1], job = readJSON(carFile(id)), act = cm[2];
+      if (act === 'image') {
+        const name = basename(url.searchParams.get('name') || 'picture').replace(/[^\w.\- ]/g, '_');
+        if (!/\.(png|jpe?g|webp)$/i.test(name)) return send(res, 400, { error: 'Please use pictures (JPG, PNG or WEBP). iPhone photos (HEIC): set Camera > Formats to "Most Compatible", or take a screenshot of the photo.' });
+        if ((job.images || []).length >= MAX_IMAGES) return send(res, 400, { error: `You can add up to ${MAX_IMAGES} pictures.` });
+        const file = `${Date.now() % 1000000}-${name.replace(/\s+/g, '-')}`;
+        await saveUpload(req, join(carDir(id), 'images', file));
+        job.images = [...(job.images || []), { file, name }]; writeJSON(carFile(id), job);
+        return send(res, 200, carouselView(id));
+      }
+      if (act === 'unimage') {
+        const { file } = await readBody(req);
+        job.images = (job.images || []).filter((x) => x.file !== file);
+        const f = join(carDir(id), 'images', basename(file || '')); if (file && existsSync(f)) rmSync(f);
+        writeJSON(carFile(id), job); return send(res, 200, carouselView(id));
+      }
+      if (act === 'options') { job.options = { ...(job.options || {}), ...(await readBody(req)) }; writeJSON(carFile(id), job); return send(res, 200, carouselView(id)); }
+      if (act === 'prepare') {
+        job.options = { ...(job.options || {}), ...(await readBody(req)) }; job.state = 'sent'; job.sentAt = Date.now();
+        writeFileSync(join(carDir(id), 'CAROUSEL.md'), carouselInstructions(job));
+        writeJSON(join(carDir(id), 'status.json'), { step: 'Waiting for Claude', detail: 'Paste the message into Claude to start.', percent: 0 });
+        job.message = carouselMessage(job); writeJSON(carFile(id), job);
+        return send(res, 200, carouselView(id));
+      }
+      if (act === 'draft') {
+        const { draft } = await readBody(req);
+        if (!draft?.carousels?.length) return send(res, 400, { error: 'Nothing to save.' });
+        writeJSON(join(carDir(id), 'draft.json'), draft);
+        // edited words after the images were made: the images are out of date until they're made again
+        const rf = join(carDir(id), 'render.json'), rj = readJSON(rf); if (rj?.state === 'done') writeJSON(rf, { ...rj, stale: true });
+        return send(res, 200, { ok: true });
+      }
+      if (act === 'render') {
+        const cur = readJSON(join(carDir(id), 'render.json'));
+        if (cur?.state === 'rendering' && Date.now() - (cur.startedAt || 0) < 5 * 60e3) return send(res, 200, carouselView(id));
+        writeJSON(join(carDir(id), 'render.json'), { ...(cur || {}), state: 'rendering', done: 0, total: 0, startedAt: Date.now(), error: null, stale: false });
+        const child = spawn(process.execPath, [join(KIT, 'scripts', 'carousel.mjs'), 'render', id], { cwd: KIT, stdio: ['ignore', 'ignore', 'pipe'] });
+        let err = ''; child.stderr.on('data', (c) => { err += c; });
+        child.on('exit', (code) => { if (code) { const f = join(carDir(id), 'render.json'); writeJSON(f, { ...(readJSON(f) || {}), state: 'error', error: err.trim().split('\n').pop() || 'The images could not be made.' }); } });
+        return send(res, 200, carouselView(id));
+      }
+      if (act === 'change') {
+        const { note } = await readBody(req);
+        if (!note || !note.trim()) return send(res, 400, { error: 'Type what you want changed first.' });
+        job.message = carouselMessage(job, note.trim()); job.state = 'sent'; writeJSON(carFile(id), job);
+        writeJSON(join(carDir(id), 'status.json'), { step: 'Waiting for Claude', detail: 'Paste the change message into the same Claude chat.', percent: 0 });
+        return send(res, 200, carouselView(id));
+      }
+      if (act === 'open') { const o = join(carDir(id), 'out'); openInOS(existsSync(o) ? o : carDir(id)); return send(res, 200, { ok: true }); }
+      if (act === 'delete') { rmSync(carDir(id), { recursive: true, force: true }); return send(res, 200, { ok: true }); }
     }
 
     if (req.method === 'GET' && p === '/file') return serveFile(req, res, inKit(url.searchParams.get('path')), url.searchParams.get('dl') === '1');

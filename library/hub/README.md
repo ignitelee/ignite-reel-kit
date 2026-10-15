@@ -22,6 +22,9 @@ Use in a reel: copy the clip into the project's `assets/` and show it with a `ph
 The long clips (dashboard, trades) are meant to be used in parts: add `"media_start": 12` (seconds) to start
 the phone video at the section that matches the words, e.g. the daily P&L chart.
 
+Stills for carousels: `stills/*.jpg` (one frame of each clip above, 800x1600), shown in a phone on Ignite
+carousels. `sparkie-review.jpg` shows a losing day being reviewed: use `sparkie.jpg` for Sparkie in general.
+
 Rebuild (for maintainers): page captures live in `_captures/<topic>/` (not shared); run
 `node scripts/hub-clips.mjs`. A topic's `manifest.json` can set `duration`, `"ease": "linear"` (steady scroll
 for long pages), `zoom` (e.g. 1.1) and `intro` (still frames shown first, e.g. a question being asked).

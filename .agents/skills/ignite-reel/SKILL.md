@@ -208,7 +208,10 @@ reel.json:
 - Icons: Material Icons Round names (`brand/fonts/MaterialIconsRound-Regular.codepoints`).
 - IGNITE Hub / Edge / onboarding B-roll: `library/hub/` (see its README, tagged by topic). ONLY for videos
   about IGNITE or trading: copy the clip into the project's assets and show it in a `phone` or `clip` when
-  they talk about that part of the Hub.
+  they talk about that part of the Hub. Ignite's own pictures (logos, discovery-call and training posters,
+  Hub/Edge screens, lifestyle): `library/ignite/images.json` says what each shows and when to use it.
+- Facts about Ignite (graphics, hooks, POST.md): ONLY from `library/ignite/IGNITE.md`; skip anything marked
+  [CHECK]; never guess numbers, names, times or features.
 
 **Music:** use the mood they chose (brand.json `music_mood` or the dashboard). Pick a track from
 `brand/music/<mood>/`, copy it into the project's assets, `"under_db": 18`. Empty folder -> no music, and

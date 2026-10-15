@@ -52,6 +52,16 @@ dashboard with download and copy-caption buttons.
 You get each reel as an MP4 plus a `POST.md` with the captions, hashtags and a cover-text idea.
 See [HOW TO MAKE A REEL.md](HOW%20TO%20MAKE%20A%20REEL.md) for tips.
 
+## Making carousels
+
+Open the dashboard and click **Carousel Builder**. Set up your logo and colour in **My brand** first (the page
+asks you to). Choose **Promoting Ignite** (Ignite logo and teal built in, Hub screens, a risk line on the last
+slide) or **My own content**, drop in your pictures, say what it's about, pick a filter (Luxury is the suggested
+one) and press **Copy my message**. Claude writes every slide and the post caption. You then read and change
+any words on the page, with a live preview, and press **Make my images**: 1080x1350 PNG slides plus the
+caption, as a zip. Making the images takes seconds and doesn't use your Claude plan, so you can change words
+and remake them as often as you like.
+
 ## Updating
 
 Say "update my IGNITE Reel Kit" in Claude Code (it runs `git pull` and `npm ci`). Your logo, settings
@@ -70,7 +80,8 @@ and music are never touched by updates.
   https://github.com/petergyang/no-ai-slop.
 - Fonts: Anton, Inter, Playfair Display (SIL Open Font Licence), Material Icons (Apache-2.0); licence
   texts in `brand/fonts/licenses/`.
-- The IGNITE Hub footage in `library/hub/` is IGNITE's, for IGNITE IBs talking about the Hub.
+- The IGNITE Hub footage in `library/hub/` and the pictures and fact sheet in `library/ignite/` are IGNITE's,
+  for IGNITE IBs talking about Ignite.
 - No music is included: add your own (see `brand/music/README.md`).
 
 You're responsible for what you post. Trading involves risk: keep claims honest and include a risk

@@ -52,6 +52,7 @@ brand/music/**/*.mp3
 brand/music/**/*.wav
 brand/music/**/*.m4a
 dashboard/jobs/
+dashboard/carousels/
 !brand/sfx/
 !brand/sfx/*.wav
 !library/hub/

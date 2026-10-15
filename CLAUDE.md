@@ -112,6 +112,11 @@ their own videos. They may be new to Claude Code: plain English, short messages,
   builds their brand kit. Never skip it.
 - Every reel request: follow the `ignite-reel` skill (it covers cutting, captions, graphics, music, the
   social captions run through the `human-speak` skill, and trial-reel variants).
+- Every carousel request (the dashboard's Carousel Builder, `dashboard/carousels/<id>/CAROUSEL.md`): follow
+  the `ignite-carousel` skill. You write `draft.json` (slides + caption, with `human-speak`); the user edits
+  the words on the dashboard and makes the images there (`scripts/carousel.mjs`).
+- Anything said about Ignite (reels, carousels, captions): facts ONLY from `library/ignite/IGNITE.md` (Lee keeps
+  it up to date; skip [CHECK] items). Ignite's pictures: `library/ignite/images.json`.
 - Their settings live in `brand/brand.json` (name, logo, accent colour, website, usual CTA,
   voice, defaults). No header bar and no IGNITE branding unless the user asks: their logo is a small
   corner badge and their accent colour runs through the styling. Use them; don't ask again for things already saved there.
