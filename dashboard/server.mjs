@@ -209,6 +209,7 @@ const server = http.createServer(async (req, res) => {
       const body = await readBody(req), cur = readJSON(BRAND) || readJSON(EXAMPLE) || {};
       for (const k of ['your_name', 'accent_color', 'website', 'cta', 'voice', 'default_platforms', 'captions', 'graphics', 'music_mood', 'risk_line'])
         if (k in body) cur[k] = body[k];
+      if ('accent_color' in body) cur.accent_chosen = true; // they saw the colour and kept it (even teal)
       if (cur.accent_color && !/^#[0-9a-f]{6}$/i.test(cur.accent_color)) return send(res, 400, { error: 'The colour must look like #13E6BA' });
       writeJSON(BRAND, cur); return send(res, 200, brandView());
     }

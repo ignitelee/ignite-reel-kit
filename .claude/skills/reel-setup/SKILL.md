@@ -83,7 +83,8 @@ Start from `brand/brand.example.json`. Ask, a few at a time, using AskUserQuesti
    the top corner of every reel. No logo yet is fine: they can add one later.
 3. **Their brand colour**: the one accent colour used for the spoken word in captions, key words and
    glows. Suggest the main colour from their logo (tell them the hex code and show it in words, e.g.
-   "bright orange"); or let them pick from a few options with AskUserQuestion. Default teal #13E6BA.
+   "bright orange"); or let them pick from a few options with AskUserQuestion. Default teal #13E6BA. Once they've chosen
+   (even if they keep teal), set `"accent_chosen": true`, or the dashboard keeps asking them to pick one.
 4. Website or handle (optional, only used in captions or when they ask for it on screen).
 5. What they usually ask people to do (optional, e.g. "DM me 'START'"): used in post captions, never as a
    fixed bar on the video.

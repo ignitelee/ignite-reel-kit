@@ -75,6 +75,8 @@ input:focus,textarea:focus,select:focus{outline:2px solid color-mix(in srgb,var(
 .err .i{color:var(--bad);margin-top:2px}
 /* the stopped banner */
 #offline{position:sticky;top:64px;z-index:19}
+/* brand reminder stays pinned under the header while they scroll the steps */
+#needBrand{position:sticky;top:76px;z-index:18;box-shadow:0 8px 24px rgba(0,0,0,.45)}
 .kbd{display:inline-block;border:1px solid #3a4560;border-bottom-width:3px;border-radius:6px;padding:0 7px;font-size:14px;font-weight:700;background:#0c1018}
 .msgbox{font-family:ui-monospace,Consolas,monospace;font-size:14px;background:#05070b;border:1px solid var(--line);border-radius:10px;padding:12px 14px;white-space:pre-wrap;word-break:break-word}
 /* choices summary + "what do you want back" cards */
@@ -166,7 +168,7 @@ details[open] summary{margin-bottom:6px}
   <p class="sub">Four quick steps here, then Claude does the editing.</p>
 
   <div id="needBrand" class="note warn hidden"><svg class="i"><use href="#i-warn"/></svg>
-    <div><b>Add your logo and colour first</b> so your reels look like you. <button class="linkbtn" onclick="showTab('brand')">Set up my brand</button></div></div>
+    <div><b id="needBrandTitle">Add your logo and colour first</b> <span id="needBrandText">so your reels look like you.</span> <button class="linkbtn" onclick="showTab('brand')">Set up my brand</button></div></div>
 
   <!-- 1 -->
   <div class="card" id="card1">
@@ -568,7 +570,12 @@ function fillBrand(b) {
     if (b.logoUrl) { img.src = b.logoUrl; img.classList.remove('hidden'); none?.classList.add('hidden'); }
     else { img.classList.add('hidden'); none?.classList.remove('hidden'); }
   }
-  $('#needBrand').classList.toggle('hidden', !!(b.exists && b.logoUrl));
+  // colour counts as chosen once saved in My brand (accent_chosen) or set to anything but the default teal
+  const noLogo = !b.logoUrl, noColour = !b.accent_chosen && (b.accent_color || '#13E6BA').toUpperCase() === '#13E6BA';
+  $('#needBrandTitle').textContent = noLogo && noColour ? 'Add your logo and colour first' : noLogo ? 'Add your logo first' : 'Pick your brand colour first';
+  $('#needBrandText').textContent = noLogo && noColour ? 'so your reels look like you.'
+    : noLogo ? 'so it shows in the corner of your reels.' : 'Your reels use IGNITE teal until you pick yours (or save it to keep teal).';
+  $('#needBrand').classList.toggle('hidden', !(noLogo || noColour));
   updateSummary();
 }
 $('#saveBrand').onclick = async () => {
