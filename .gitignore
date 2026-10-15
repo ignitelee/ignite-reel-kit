@@ -45,7 +45,9 @@ Thumbs.db
 
 # IGNITE Reel Kit: each IB's own settings, logo and music stay on their computer
 brand/brand.json
-brand/user/
+# the folder ships empty (.gitkeep) so setup can copy a logo straight into it
+brand/user/*
+!brand/user/.gitkeep
 brand/music/**/*.mp3
 brand/music/**/*.wav
 brand/music/**/*.m4a

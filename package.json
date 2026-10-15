@@ -39,5 +39,11 @@
   },
   "dependencies": {
     "simple-icons": "16.35.0"
+  },
+  "allowScripts": {
+    "esbuild": true,
+    "onnxruntime-node": false,
+    "protobufjs": false,
+    "@google/genai": false
   }
 }

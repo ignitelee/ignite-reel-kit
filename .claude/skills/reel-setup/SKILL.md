@@ -91,7 +91,7 @@ Start from `brand/brand.example.json`. Ask, a few at a time, using AskUserQuesti
 6. Defaults: platforms (Instagram, TikTok, Facebook, YouTube Shorts), captions on/off, graphics
    none/light/full, music mood (upbeat/inspiring/calm/emotional/none).
 
-**Their logo:** copy it into `brand/user/` and set `"logo": "user/<file>"`. It must have a transparent
+**Their logo:** copy it into `brand/user/` (create the folder if it's missing) and set `"logo": "user/<file>"`. It must have a transparent
 background so it sits cleanly on the video. If it's a JPG or has a white/coloured box behind it, make a
 transparent PNG (e.g. `ffmpeg -i in.jpg -vf "colorkey=white:0.25:0.05,format=rgba" brand/user/logo.png`),
 show them the result and confirm. Keep it under ~1000 px wide.
