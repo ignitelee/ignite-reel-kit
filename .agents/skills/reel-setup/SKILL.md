@@ -83,14 +83,15 @@ Start from `brand/brand.example.json`. Ask, a few at a time, using AskUserQuesti
    the top corner of every reel. No logo yet is fine: they can add one later.
 3. **Their brand colour**: the one accent colour used for the spoken word in captions, key words and
    glows. Suggest the main colour from their logo (tell them the hex code and show it in words, e.g.
-   "bright orange"); or let them pick from a few options with AskUserQuestion. Default teal #13E6BA.
+   "bright orange"); or let them pick from a few options with AskUserQuestion. Default teal #13E6BA. Once they've chosen
+   (even if they keep teal), set `"accent_chosen": true`, or the dashboard keeps asking them to pick one.
 4. Website or handle (optional, only used in captions or when they ask for it on screen).
 5. What they usually ask people to do (optional, e.g. "DM me 'START'"): used in post captions, never as a
    fixed bar on the video.
 6. Defaults: platforms (Instagram, TikTok, Facebook, YouTube Shorts), captions on/off, graphics
    none/light/full, music mood (upbeat/inspiring/calm/emotional/none).
 
-**Their logo:** copy it into `brand/user/` and set `"logo": "user/<file>"`. It must have a transparent
+**Their logo:** copy it into `brand/user/` (create the folder if it's missing) and set `"logo": "user/<file>"`. It must have a transparent
 background so it sits cleanly on the video. If it's a JPG or has a white/coloured box behind it, make a
 transparent PNG (e.g. `ffmpeg -i in.jpg -vf "colorkey=white:0.25:0.05,format=rgba" brand/user/logo.png`),
 show them the result and confirm. Keep it under ~1000 px wide.
