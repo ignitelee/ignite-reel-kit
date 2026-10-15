@@ -122,10 +122,10 @@ function wireForm(job) {
   const acc = $('#cbAccent'); if (acc) acc.onchange = () => { readForm(); form.accent = acc.value.toUpperCase(); redraw(); };
   const rst = $('#cbAccentReset'); if (rst) rst.onclick = () => { readForm(); form.accent = ''; redraw(); };
   const files = $('#cbFiles'), drop = $('#cbDrop');
-  const add = async (list) => {
+  const add = async (fl) => { // fl: a plain array, copied before the file picker is cleared
     clearErr('cbErr2'); readForm();
     try {
-      let j = await ensureJob(); const fl = [...list];
+      let j = await ensureJob();
       for (let i = 0; i < fl.length; i++) {
         $('#cbUp').textContent = `Adding picture ${i + 1} of ${fl.length}...`;
         const r = await fetch(`/api/carousels/${j.id}/image?name=${encodeURIComponent(fl[i].name)}`, { method: 'POST', body: fl[i] });
@@ -135,10 +135,11 @@ function wireForm(job) {
       S.carousels = [j, ...(S.carousels || []).filter((x) => x.id !== j.id)]; $('#cbUp').textContent = ''; redraw();
     } catch (e) { $('#cbUp').textContent = ''; showErr('cbErr2', esc(e.message)); }
   };
-  files.onchange = (e) => { add(e.target.files); e.target.value = ''; };
+  // copy the picked files FIRST: clearing the picker empties its live FileList (that lost every picture before)
+  files.onchange = (e) => { const fl = [...e.target.files]; e.target.value = ''; if (fl.length) add(fl); };
   ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
   ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
-  drop.addEventListener('drop', (e) => e.dataTransfer.files.length && add(e.dataTransfer.files));
+  drop.addEventListener('drop', (e) => { const fl = [...e.dataTransfer.files]; if (fl.length) add(fl); });
   $$('[data-unimg]', el).forEach((b) => b.onclick = async () => { const j = await post(`/api/carousels/${curId}/unimage`, { file: b.dataset.unimg }); S.carousels = [j, ...S.carousels.filter((x) => x.id !== j.id)]; redraw(); });
   $('#cbCopy').onclick = async () => {
     clearErr('cbErr5'); readForm();
