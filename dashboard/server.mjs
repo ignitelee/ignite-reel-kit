@@ -93,7 +93,7 @@ function jobInstructions(job) {
     ``,
     ...mainLines(job),
     `- Reels: ${o.count || 1}${o.full ? ', plus one full-length version' : ''}. If the video can't honestly give that many good reels, make fewer and say why.`,
-    `- Platforms: ${plat}. One POST.md per reel with a caption for each of these platforms (use the humanizer skill).`,
+    `- Platforms: ${plat}. One POST.md per reel with a caption for each of these platforms (use the human-speak skill).`,
     `- Captions on the video: ${o.captions === false ? 'NO' : 'yes'}. Graphics: ${o.graphics || 'full'}.`,
     `- Music: ${o.music && o.music !== 'none' ? `${o.music} mood (brand/music/${o.music}/), ${o.musicLevel || 'quiet'} under the voice` : 'none'}.`,
     `- Trial reel versions per reel (same reel, different openings): ${o.variants ? `${o.variants} in total (the main reel + ${o.variants - 1} variants with different hooks), listed in results.json "variants" and in POST.md` : 'none'}.`,

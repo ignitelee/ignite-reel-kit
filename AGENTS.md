@@ -111,7 +111,7 @@ their own videos. They may be new to Claude Code: plain English, short messages,
 - First time (no `brand/brand.json`): run the `reel-setup` skill. It checks/installs the tools and
   builds their brand kit. Never skip it.
 - Every reel request: follow the `ignite-reel` skill (it covers cutting, captions, graphics, music, the
-  social captions run through the `humanizer` skill, and trial-reel variants).
+  social captions run through the `human-speak` skill, and trial-reel variants).
 - Their settings live in `brand/brand.json` (name, logo, accent colour, website, usual CTA,
   voice, defaults). No header bar and no IGNITE branding unless the user asks: their logo is a small
   corner badge and their accent colour runs through the styling. Use them; don't ask again for things already saved there.

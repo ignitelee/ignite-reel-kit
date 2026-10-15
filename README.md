@@ -65,7 +65,9 @@ and music are never touched by updates.
 - **HyperFrames** by HeyGen (Apache-2.0), **GSAP**, **faster-whisper** (MIT).
 - Brand logos from **Simple Icons** (CC0): https://simpleicons.org. Logos are trademarks of their owners:
   show them only when you mention the brand, never in a way that suggests they endorse you.
-- **Humanizer** skill by Siqi Chen / blader (MIT): `.claude/skills/humanizer/`.
+- **Human Speak** skill by Nate Herk (MIT): https://github.com/nateherkai/human-speak, in
+  `.claude/skills/human-speak/`. It adapts ideas from **No AI Slop** by Peter Yang (MIT):
+  https://github.com/petergyang/no-ai-slop.
 - Fonts: Anton, Inter, Playfair Display (SIL Open Font Licence), Material Icons (Apache-2.0); licence
   texts in `brand/fonts/licenses/`.
 - The IGNITE Hub footage in `library/hub/` is IGNITE's, for IGNITE IBs talking about the Hub.

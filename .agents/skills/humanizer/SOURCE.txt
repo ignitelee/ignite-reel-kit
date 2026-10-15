@@ -1,1 +1,0 @@
-Source: https://github.com/blader/humanizer @ 225a6f3 (v3.1.0), MIT. Installed 2026-10-12 for IGNITE reel captions/posts.

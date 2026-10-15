@@ -228,8 +228,9 @@ the one with the best 3-second hold.
 Write as an expert short-form marketer who knows each platform's search, in the user's voice (brand.json
 "voice"). Use the words people search FOR THIS TOPIC (a fitness reel: fitness words; a trading/IGNITE reel:
 "forex IB", "introducing broker", "trading community", "gold signals", "how to become an IB"; "passive
-income" only if accurate). Hashtags fit the topic, never trading tags on a non-trading reel. Then run the `humanizer` skill on every piece of
-copy (embedded mode): no "not X but Y", no "Here's the thing", no dashes, no triads for rhythm, no
+income" only if accurate). Hashtags fit the topic, never trading tags on a non-trading reel. Then run the `human-speak` skill on every piece of
+copy (Draft mode, then its evaluation check; clean copy only, no "What changed" notes in POST.md): no
+"not X but Y", no "Here's the kicker", no "No X. No Y. Just Z.", no dashes, no triads for rhythm, no
 "game-changer/unlock/elevate", no emoji bullets.
 
 Use EXACTLY these first two sections (the dashboard reads them):
