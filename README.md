@@ -5,6 +5,9 @@ Drop in a video and get back reels with your logo and colours, captions that hig
 graphics that match what you're saying, calm zooms, music, and ready-to-post captions for Instagram,
 TikTok, Facebook and YouTube Shorts that don't sound like AI.
 
+It also builds **carousels**: add your pictures, choose one of 3 options, check the words, and download
+branded 1080x1350 slides with the post caption.
+
 Made for IGNITE IBs. Works on Mac and Windows.
 
 ## What you need

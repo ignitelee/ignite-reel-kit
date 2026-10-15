@@ -80,6 +80,18 @@ The kit never posts anything for you.
 
 ---
 
+## 4. Make carousels
+
+On the dashboard, click **Carousel Builder**.
+
+1. Choose **Promoting Ignite** or **My own content**, add your pictures, and say what it's about.
+2. Press **Copy my message for Claude** and paste it into Claude (Code, folder **ignite-reel-kit**).
+3. Claude gives you **3 short options**. Choose ONE (you don't need all of them) and paste the next message
+   into the same Claude chat. Claude writes that one in full and adds your pictures.
+4. Read the slides and change any words. Press **Make my images** (a few seconds, free), then **Download all**.
+
+---
+
 ## If something goes wrong
 
 - **Claude keeps asking to Allow:** normal. Click Allow.

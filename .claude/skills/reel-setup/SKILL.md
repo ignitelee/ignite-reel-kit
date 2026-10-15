@@ -110,9 +110,10 @@ Run `node scripts/reel-doctor.mjs` (all OK). Then:
 2. Open the dashboard in the Claude app's side panel: the browser panel's preview tool (`preview_start`)
    with name `reel-dashboard` (from `.claude/launch.json`). If that tool isn't available, run
    `npm run dashboard` in the background instead (it opens in their normal browser at http://localhost:4747).
-3. Tell them, in three short lines: they're set up; the dashboard is where they make reels (drop a video,
-   pick options, press "Copy my message", paste it back into Claude here, click Allow when asked); next time
-   they just say "open my reel dashboard" to Claude, or double-click **IGNITE Reels** on the desktop and leave
-   the small black window open.
+3. Tell them, in four short lines: they're set up; the dashboard (Reel Studio) is where they make reels (drop
+   a video, pick options, press "Copy my message", paste it back into Claude here, click Allow when asked) and
+   carousels (Carousel Builder: add pictures, choose 1 of 3 options, check the words, Make my images); every
+   post comes with ready-to-paste captions for Instagram and TikTok; next time they just say "open my reel
+   dashboard" to Claude, or double-click **IGNITE Reels** on the desktop and leave the small black window open.
 
 If they already filled in their brand in step 4, it's in the dashboard's "My brand" tab too (same file).
