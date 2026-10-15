@@ -882,18 +882,24 @@ function postHTML(jid, i, md, reelTitle) {
 }
 const fmtDate = (t) => t ? new Date(t).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
 function jobTitle(j) { const t = j.results?.reels?.[0]?.title; return t ? t + ((j.results.reels.length > 1) ? ` + ${j.results.reels.length - 1} more` : '') : 'Your video'; }
+// progress: a live "last update" time, and the Allow reminder only while there's no update (it clears itself
+// when Claude carries on, and comes back if it stalls again)
+const STALL_MS = 3 * 60 * 1000;
+const agoText = (ms) => { const m = Math.floor((ms || 0) / 60000); return m < 1 ? 'just now' : m === 1 ? '1 minute ago' : `${m} minutes ago`; };
+const ageKey = (j) => (j.state === 'working' ? Math.floor((j.statusAge || 0) / 60000) : 0); // re-draw once a minute while working
 function jobHTML(j, big) {
   const [label, cls] = STATE[j.state] || [j.state, ''];
   const st = j.status || {}, pct = Math.max(0, Math.min(100, st.percent ?? 0));
-  const stale = j.state === 'working' && j.statusAge > 10 * 60 * 1000;
+  const stalled = j.state === 'working' && j.statusAge > STALL_MS;
   let h = `<div class="card" id="job-${j.id}">
     <div class="jobhead"><div><h2>${esc(jobTitle(j))}</h2><div class="meta">${esc(fmtDate(j.createdAt))} · from ${esc(j.originalName || 'your video')}</div></div><span class="pill ${cls}">${label}</span></div>`;
   if (j.state === 'sent') h += `<div class="note warn">${icon('clock')}<div><b>Waiting for Claude.</b> Paste the message into the Claude app (Code, in the ignite-reel-kit folder) and press Enter. If Claude is asking to <b>Allow</b> something, click Allow.
       <div style="margin-top:8px"><button class="btn ghost sm" data-copy="${esc(j.message || '')}">Copy the message again</button></div></div></div>`;
-  if (j.state === 'working' || (j.state === 'sent' && st.percent)) h += `<div style="margin:14px 0 6px" class="row"><b>${esc(st.step || 'Working')}</b><span class="muted small">${pct}%</span>
+  if (j.state === 'working' || (j.state === 'sent' && st.percent)) h += `<div style="margin:14px 0 6px" class="row"><b>${esc(st.step || 'Working')}</b><span class="muted small">${pct}% · last update ${agoText(j.statusAge)}</span>
       <i class="tip">i<span class="tt">Claude updates this as it goes. Rendering (building the final video) is the slowest part and can sit still for a few minutes: that's normal.</span></i></div>
       <div class="bar"><i style="width:${pct}%"></i></div><p class="muted small">${esc(st.detail || '')}</p>
-      <div class="note${stale ? ' warn' : ''}">${icon(stale ? 'warn' : 'info')}<div>${stale ? '<b>No update for over 10 minutes.</b> Check whether Claude is waiting for you to click <b>Allow</b>.' : 'Keep the Claude app open. If it seems stuck, check whether Claude is asking you to <b>Allow</b> something.'}</div></div>`;
+      ${stalled ? `<div class="note warn">${icon('warn')}<div><b>No update for ${Math.floor(j.statusAge / 60000)} minutes.</b> Check the Claude app: if it's asking you to <b>Allow</b>, click Allow. Making the video can also take a few minutes.</div></div>`
+        : `<p class="muted small">${icon('info')} Keep the Claude app open while it works.</p>`}`;
   const reels = j.results?.reels || [];
   if (reels.length) {
     if (j.results.message) h += `<div class="note">${icon('spark')}<div>${esc(j.results.message)}</div></div>`;
@@ -943,14 +949,14 @@ function renderCurrent(j) {
   const el = $('#current');
   if (!j || j.state === 'uploaded') { el.innerHTML = ''; el._sig = null; return; }
   if (el.contains(document.activeElement) && document.activeElement.tagName === 'TEXTAREA') return; // don't wipe typing
-  const sig = JSON.stringify({ ...j, statusAge: j.statusAge > 600000 });
+  const sig = JSON.stringify({ ...j, statusAge: ageKey(j) });
   if (el._sig === sig) return; el._sig = sig;
   el.innerHTML = `<h2 style="margin:30px 0 0">Your current video</h2>` + jobHTML(j, true); wire(el);
 }
 function renderJobs() {
   const el = $('#jobs'); if (el.contains(document.activeElement) && document.activeElement.tagName === 'TEXTAREA') return;
   const jobs = (S?.jobs || []).filter((j) => j.state !== 'uploaded');
-  const sig = JSON.stringify(jobs.map((j) => ({ ...j, statusAge: j.statusAge > 600000 })));
+  const sig = JSON.stringify(jobs.map((j) => ({ ...j, statusAge: ageKey(j) })));
   if (el._sig === sig) return; el._sig = sig;
   el.innerHTML = jobs.length ? jobs.map((j) => jobHTML(j)).join('') : `<div class="card muted">Nothing yet. Go to <a href="#" onclick="showTab('make');return false">Make reels</a> to start.</div>`;
   wire(el);

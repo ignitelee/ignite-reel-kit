@@ -159,14 +159,15 @@ function renderForm(job) {
 
 // ---------- 2. while Claude writes ----------
 function progressHTML(j) {
-  const st = j.status || {}, pct = Math.max(0, Math.min(100, st.percent ?? 0)), stale = j.state === 'working' && j.statusAge > 10 * 60e3;
+  const st = j.status || {}, pct = Math.max(0, Math.min(100, st.percent ?? 0)), stalled = j.state === 'working' && j.statusAge > STALL_MS;
   return `<div class="card"><div class="jobhead"><div><h2>Claude is writing your carousels</h2><div class="meta">${esc(new Date(j.createdAt).toLocaleString())}</div></div>
       <span class="pill ${j.state === 'sent' ? 'wait' : 'working'}">${j.state === 'sent' ? 'Waiting for Claude' : 'Working'}</span></div>
     ${j.state === 'sent' && !st.percent ? `<div class="note warn">${icon('clock')}<div><b>Waiting for Claude.</b> Paste the message into the Claude app (Code, in the ${esc(S.kitName)} folder) and press Enter. If Claude asks to <b>Allow</b> something, click Allow.
       <div style="margin-top:8px"><button class="btn ghost sm" id="cbRecopy">Copy the message again</button></div></div></div>` : `
-      <div style="margin:14px 0 6px" class="row"><b>${esc(st.step || 'Working')}</b><span class="muted small">${pct}%</span></div>
+      <div style="margin:14px 0 6px" class="row"><b>${esc(st.step || 'Working')}</b><span class="muted small">${pct}% · last update ${agoText(j.statusAge)}</span></div>
       <div class="bar"><i style="width:${pct}%"></i></div><p class="muted small">${esc(st.detail || '')}</p>
-      <div class="note${stale ? ' warn' : ''}">${icon(stale ? 'warn' : 'info')}<div>${stale ? '<b>No update for over 10 minutes.</b> Check whether Claude is waiting for you to click <b>Allow</b>.' : 'Keep the Claude app open. You\'ll read every slide here before any image is made.'}</div></div>`}
+      ${stalled ? `<div class="note warn">${icon('warn')}<div><b>No update for ${Math.floor(j.statusAge / 60000)} minutes.</b> Check the Claude app: if it's asking you to <b>Allow</b>, click Allow.</div></div>`
+        : `<p class="muted small">${icon('info')} Keep the Claude app open. You'll read every slide here before any image is made.</p>`}`}
     <div class="row" style="margin-top:12px"><button class="linkbtn small" id="cbNew">Start a different carousel</button></div></div>`;
 }
 
@@ -332,7 +333,7 @@ function renderJob(job, force) {
   const editing = root().contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
   if (!job || job.state === 'new') { if (force || lastSig !== 'form') { form = form || { ...defaultForm(), ...(job?.options || {}) }; renderForm(job); } return; }
   if (job.state === 'sent' || job.state === 'working') {
-    const sig = 'p' + JSON.stringify([job.id, job.state, job.status, job.statusAge > 600e3]);
+    const sig = 'p' + JSON.stringify([job.id, job.state, job.status, ageKey(job)]);
     if (!force && sig === lastSig) return; lastSig = sig; root().innerHTML = progressHTML(job);
     const rc = $('#cbRecopy'); if (rc) rc.onclick = async () => { await copy(job.message); toast('Copied.'); };
     $('#cbNew').onclick = newCarousel; return;
