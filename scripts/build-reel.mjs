@@ -7,7 +7,7 @@
 // so they never sit on the face or on the captions. Full cards wipe in over the video.
 // Trial-reel variants: reel.json "variants": [{"name": "v2", "hook": {...}, "headline": "...", ...}]
 // override the base settings (hook/header/captions objects are merged, everything else replaced).
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync } from 'node:fs';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { resolve, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -38,6 +38,17 @@ const SI_HEX = (() => {
   const d = JSON.parse(readFileSync(f, 'utf8'));
   return Object.fromEntries((Array.isArray(d) ? d : d.icons).map((i) => [i.slug || i.title.toLowerCase().replace(/[^a-z0-9]/g, ''), i.hex]));
 })();
+
+// extra logos shipped with the kit (library/logos: brands Simple Icons doesn't have, e.g. CapCut, MetaTrader 5)
+const KIT_LOGOS = (() => { const f = join(KIT_ROOT, 'library/logos/logos.json'); return existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : []; })();
+function kitLogo(slug, where) { // copies the file into the project and returns its path for the page
+  const it = KIT_LOGOS.find((x) => x.slug === slug);
+  if (!it) throw new Error(`${where}: no kit logo "${slug}" (have: ${KIT_LOGOS.map((x) => x.slug).join(', ')}; search with: npm run logo -- <brand>)`);
+  mkdirSync(P('assets/logos'), { recursive: true });
+  copyFileSync(join(KIT_ROOT, 'library/logos', it.file), P(`assets/logos/${it.file}`));
+  return `assets/logos/${it.file}`;
+}
+const isBrand = (logo) => /^(si|kit):/.test(logo || ''); // a real brand logo: it lands with the logo hit sound
 
 // ---------- media ----------
 const probe = (f) => JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-show_entries',
@@ -182,8 +193,13 @@ function reframeFor(side) {
 }
 
 // ---------- graphics: timing pre-pass ----------
+// "logo" pops sit where the speaker points: "point": [x, y] in the 1080x1920 frame (default: above their head)
+const logoPos = (p) => {
+  const k = p.size ?? 1, s = 330 * k, th = p.title ? 100 * k : 0, [x, y] = p.point || [W / 2, 330];
+  return { x: r3(Math.min(W - s - 24, Math.max(24, x - s / 2))), y: r3(Math.min(H - s - th - 24, Math.max(24, y - s / 2))), w: r3(s), h: r3(s + th) };
+};
 const pops = (cfg.popups || []).map((p, i) => {
-  const pos = typeof p.pos === 'object' ? p.pos : POS[p.pos] || Object.values(POS)[0];
+  const pos = p.type === 'logo' ? logoPos(p) : typeof p.pos === 'object' ? p.pos : POS[p.pos] || Object.values(POS)[0];
   if (!pos) throw new Error(`popup ${i + 1}: unknown pos "${p.pos}" (have: ${Object.keys(POS).join(', ')})`);
   anchorFrom = 0;
   const a = anchor(p.at, `popup ${i + 1}`);
@@ -491,6 +507,7 @@ for (const g of pops) {
         const svg = readFileSync(f, 'utf8').replace(/<title>[^<]*<\/title>/, '').replace('<svg ', `<svg fill="${fg}" width="${r3(46 * sz)}" height="${r3(46 * sz)}" `);
         return `<span class="glogo brand" style="background:${it.bg || hex}">${svg}</span>`;
       }
+      if (it.logo?.startsWith('kit:')) return `<span class="glogo kit"><img src="${esc(kitLogo(it.logo.slice(4), L))}" alt=""></span>`;
       if (!it.logo) return `<span class="glogo ig-icon" style="font-size:${r3(40 * sz)}px;color:${it.color || TEAL};background:${it.bg || 'rgba(255,255,255,.10)'}">${icon(it.icon || 'bolt')}</span>`;
       if (it.logo.endsWith('.svg')) {
         const svg = readFileSync(P(it.logo), 'utf8').replace(/<title>[^<]*<\/title>/, '').replace('<svg ', `<svg fill="${it.color || '#ffffff'}" width="${r3(44 * sz)}" height="${r3(44 * sz)}" `);
@@ -506,7 +523,7 @@ for (const g of pops) {
       const ti = Math.max(tAt(it.at, `${L} item ${k + 1}`, t0 + 0.1 + k * 0.4), t0);
       tw(`#${id} .gc${k}`, { opacity: 0, x: al === 'right' ? 70 : al === 'center' ? 0 : -70, y: al === 'center' ? 40 : 0, scale: 0.9, filter: 'blur(8px)' }, { opacity: 1, x: 0, y: 0, scale: 1, filter: 'blur(0px)', duration: 0.55, ease: 'power3.out' }, ti);
       tw(`#${id} .gc${k} .sheen`, { xPercent: 0 }, { xPercent: 560, duration: 0.9, ease: 'power2.inOut' }, ti + 0.25); // light catching the glass
-      sfx('pop', ti);
+      sfx(isBrand(it.logo) ? 'hit' : 'pop', ti);
       if (crossOf(it) !== undefined) {
         const tc = anchor(crossOf(it), `${L} cross`).start + (it.cross_at === undefined ? k * 0.18 : 0);
         tw(`#${id} .gc${k} .strike`, { scaleX: 0 }, { scaleX: 1, duration: 0.3, ease: 'power2.inOut' }, tc);
@@ -586,9 +603,34 @@ for (const g of pops) {
   } else if (p.type === 'image') {
     inner = `${labelHtml(p, sz)}<img class="pimg" src="${esc(p.src)}" style="max-width:${p.w || 90}%;max-height:${p.h || 80}%">${p.caption ? `<div class="ig-small" style="font-size:${40 * sz}px;margin-top:16px">${rich(p.caption)}</div>` : ''}`;
     labelAnim(); enter(`#${id} .pimg`, t0 + 0.2); if (p.caption) enter(`#${id} .ig-small`, t0 + 0.5);
+  } else if (p.type === 'logo') {
+    // one big real logo that pops in where they point, with the logo hit sound; "cross_at" stamps a cross on it
+    const lg = p.logo || '';
+    let badge;
+    if (lg.startsWith('kit:')) badge = `<img src="${esc(kitLogo(lg.slice(4), L))}" alt="">`;
+    else if (lg.startsWith('si:')) {
+      const slug = lg.slice(3), f = join(KIT_ROOT, 'node_modules/simple-icons/icons', `${slug}.svg`);
+      if (!existsSync(f)) throw new Error(`${L}: no logo "${slug}" (find one with: npm run logo -- <brand>)`);
+      const hex = '#' + (SI_HEX[slug] || '222222'), lum = parseInt(hex.slice(1, 3), 16) * 0.3 + parseInt(hex.slice(3, 5), 16) * 0.59 + parseInt(hex.slice(5, 7), 16) * 0.11;
+      badge = `<span class="lsi" style="background:${p.bg || hex}">${readFileSync(f, 'utf8').replace(/<title>[^<]*<\/title>/, '').replace('<svg ', `<svg fill="${p.color || (lum > 170 ? '#111111' : '#ffffff')}" `)}</span>`;
+    } else if (lg) badge = `<img src="${esc(lg)}" alt="">`;
+    else badge = `<span class="lsi ig-icon" style="background:rgba(255,255,255,.12);color:${TEAL};font-size:${r3(170 * sz)}px">${icon(p.icon || 'bolt')}</span>`;
+    inner = `<div class="lpop"><div class="lbadge"><i class="lring"></i>${badge}${p.cross_at !== undefined ? `<span class="lx ig-icon">${icon('close')}</span>` : ''}</div>` +
+      `${p.title ? `<div class="ltitle" style="font-size:${r3(44 * (p.size ?? 1))}px">${rich(p.title)}</div>` : ''}</div>`;
+    tw(`#${id} .lbadge`, { opacity: 0, scale: 0.25, rotation: -14, filter: 'blur(6px)' }, { opacity: 1, scale: 1, rotation: 0, filter: 'blur(0px)', duration: 0.55, ease: 'back.out(2.2)' }, t0);
+    tw(`#${id} .lring`, { opacity: 0.95, scale: 0.85 }, { opacity: 0, scale: 1.45, duration: 0.85, ease: 'power2.out' }, t0 + 0.08);
+    if (end - t0 > 1.4) tw(`#${id} .lbadge`, { y: 0 }, { y: -12, duration: r3(end - t0 - 0.9), ease: 'sine.inOut' }, t0 + 0.6); // gentle float
+    if (p.title) enter(`#${id} .ltitle`, t0 + 0.22, { y: 14, d: 0.4 });
+    sfx(p.sfx ?? 'hit', t0);
+    if (p.cross_at !== undefined) {
+      const tc = anchor(p.cross_at, `${L} cross`).start;
+      tw(`#${id} .lx`, { scale: 0, opacity: 0, rotation: -60 }, { scale: 1, opacity: 1, rotation: 0, duration: 0.4, ease: 'back.out(2.4)' }, tc);
+      to(`#${id} .lbadge > img, #${id} .lbadge > .lsi`, { filter: 'grayscale(1) brightness(0.65)', duration: 0.3 }, tc);
+      sfx('tick', tc);
+    }
   } else throw new Error(`${L}: unknown type "${p.type}"`);
 
-  const core = usePanel ? `<div class="panel">${inner}</div>` : ['phone', 'glass', 'beforeafter'].includes(p.type) ? inner : `<div class="pin">${inner}</div>`;
+  const core = usePanel ? `<div class="panel">${inner}</div>` : ['phone', 'glass', 'beforeafter', 'logo'].includes(p.type) ? inner : `<div class="pin">${inner}</div>`;
   const body = pos.card ? `<div class="cgrid"></div><div class="cglow"></div>${core}` : core;
   const cardPad = (pos.card || pos.split) && pos.cy !== undefined ? `;padding:${pos.cy - pos.y}px 70px ${pos.y + pos.h - pos.cy - pos.ch}px;justify-content:center` : '';
   if (p.type !== 'clip' || p.text) html.push(`<div id="${id}" class="clip ${cls}" data-start="${r3(t0)}" data-duration="${r3(end - t0)}" data-track-index="${track++}" style="${box}${cardPad}">${body}</div>`);
@@ -605,7 +647,7 @@ for (const g of pops) {
     to(`#${id} .panel`, { opacity: 0, x: dx * 0.6, filter: 'blur(8px)', duration: 0.35, ease: 'power2.in' }, end - 0.35);
     sfx(p.sfx ?? 'whoosh', t0 + 0.1);
   } else if (p.type !== 'clip') {
-    if (p.sfx !== false && !['phone', 'glass'].includes(p.type)) sfx(p.sfx ?? 'pop', t0);
+    if (p.sfx !== false && !['phone', 'glass', 'logo'].includes(p.type)) sfx(p.sfx ?? 'pop', t0);
     if (p.type === 'phone') sfx(p.sfx ?? 'whoosh', t0 + 0.1);
     fadeOut(`#${id}`, end - 0.3);
   }
@@ -750,6 +792,14 @@ const css = `*{box-sizing:border-box}html,body{margin:0;width:${W}px;height:${H}
 .gcard::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.6px;background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(255,255,255,.10) 32%,rgba(255,255,255,.04) 62%,rgba(255,255,255,.6));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
 .gcard .sheen{position:absolute;top:-30%;bottom:-30%;width:38%;left:-70%;background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,255,255,.38),rgba(255,255,255,0));transform:skewX(-18deg);pointer-events:none}
 .glogo.brand{box-shadow:inset 0 0 0 1px rgba(255,255,255,.18),0 6px 16px rgba(0,0,0,.35)}
+.glogo.kit{overflow:hidden;background:none;box-shadow:0 6px 16px rgba(0,0,0,.35)}.glogo.kit img{width:100%;height:100%;object-fit:cover;display:block}
+.lpop{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;gap:16px}
+.lbadge{position:relative;width:100%;aspect-ratio:1;flex:none;filter:drop-shadow(0 20px 44px rgba(0,0,0,.55))}
+.lbadge>img,.lbadge>.lsi{width:100%;height:100%;border-radius:23%;object-fit:cover;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 2px rgba(255,255,255,.16)}
+.lbadge>.lsi svg{width:56%;height:56%}
+.lring{position:absolute;inset:-14px;border-radius:27%;border:5px solid ${TEAL};box-shadow:0 0 34px ${TEAL}}
+.lx{position:absolute;right:-6%;top:-6%;width:34%;height:34%;border-radius:50%;background:#ff3b4f;color:#fff;display:flex;align-items:center;justify-content:center;font-size:${r3(80)}px;box-shadow:0 8px 20px rgba(0,0,0,.4)}
+.ltitle{font-weight:800;color:#fff;text-align:center;white-space:nowrap;text-shadow:0 4px 22px rgba(0,0,0,.65)}
 .glogo{flex:none;width:1.9em;height:1.9em;border-radius:.5em;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
 .gt{position:relative;font-weight:800;line-height:1.08}.gs{font-weight:500;opacity:.82;margin-top:4px}.gtx{min-width:0}
 .gx{position:absolute;right:-14px;top:-14px;width:46px;height:46px;border-radius:50%;background:#ff4d5e;color:#fff;font-size:30px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(255,77,94,.5);opacity:0}

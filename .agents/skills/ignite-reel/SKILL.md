@@ -125,7 +125,8 @@ and the reel feels designed for this video, not filled from a template.
 | **Stay on them** | personal, emotional, funny or story lines; the hook; the payoff. Let the face carry it. | no graphic (maybe a slow push-in) |
 | **Split screen** | EXPLAINING something: steps, a comparison, a process, a list, before/after, a number with context. They glide into a rounded panel at the top, the explanation builds below, captions move into their panel. | any diagram type with `"pos": "split"` |
 | **Liquid glass pop-up** | a short point, a name, a number, a brand, a quick "not this / this": beside them in clean space, never over the face or captions | `glass` (side or top position) |
-| **Real logo** | they NAME a brand, app, company or platform (Instagram, Netflix, Spotify, Uber, Apple, YouTube...) | `glass` item with `"logo": "si:<slug>"`: find slugs with `npm run logo -- <brand>` (3,400+ real logos, offline). Not found -> a fitting Material icon; never draw or invent a logo |
+| **Real logo** | they NAME a brand, app, company or platform (Instagram, Netflix, Spotify, CapCut, MetaTrader 5, PU Prime...) | `glass` item with `"logo": "si:<slug>"` or `"kit:<slug>"`: find it with `npm run logo -- <brand>` (3,400+ real logos plus the kit's extras in `library/logos`, offline). Not found -> a fitting Material icon; never draw or invent a logo. Brand logos land with the logo hit sound automatically |
+| **Logo pop where they point** | they name a brand AND point or gesture at a spot (up, to one side) | `{"type": "logo", "logo": "kit:capcut", "title": "CapCut", "at": "CapCut", "until": "...", "point": [x, y]}`: one big logo pops in at that spot with the hit sound (`cross_at` stamps a cross on it for "no more CapCut") |
 | **Full-screen card** | ONE big moment (the key number, the big reveal, the final line): use sparingly, max 1-2 per reel | `title`, `stat` or a diagram with `"pos": "card"` |
 | **B-roll / screen recording** | showing the actual thing they talk about (an app, the Hub, a place): their own uploaded clips and their library first, then the IGNITE library (IGNITE videos only) | `phone` or `clip` |
 | **Chip / highlight** | one punchy phrase on screen | `chip`, `stack`, `hl` |
@@ -156,6 +157,11 @@ and the reel feels designed for this video, not filled from a template.
   business, trading or IGNITE; set `"logo": false` on personal, lifestyle and general videos (it adds
   nothing there). The dashboard's "Show my logo" choice (auto / always / never) wins; "auto" = this rule.
 - **Never** over the face, never over the captions, never cut-off text. Check every graphic in snapshots.
+- **Brand mentions: look where they point.** Every time they name a brand, app or company, take a snapshot at
+  that word and LOOK at their hands. If they point or gesture at a spot (up, to a side), use a `logo` pop with
+  `"point"` = that spot in the 1080x1920 frame (where the finger points, a little beyond it; clear of the face
+  and captions), then snapshot again to check it sits where they point. Not pointing -> the usual `glass` card
+  beside them. Either way it's the REAL logo (`npm run logo -- <brand>`), with the hit sound.
 - **Close-up selfie footage** (the face fills most of the frame, typical phone video): don't use
   `side-left`/`side-right` (the camera glide has to zoom in a lot and crops the head). Put glass in the
   clear area under the captions instead, e.g. `"pos": {"x": 60, "y": 1330, "w": 960, "h": 330}` with
@@ -197,7 +203,7 @@ reel.json:
 - Types (all take `label` + `icon` and optional `title`): `list` (`items: [{text, at, mark}]`), `split`
   (`tiles: [{icon, title, sub, at, highlight}]`), `flow` (`nodes`, `pay: {at, text, chip}`), `phone` (`src`,
   `caption`, `stamp: {text, at}`), `clip` (B-roll video), `stat` (`value`, `sub`), `chip`, `stack`, `title`
-  (+ `sub`), `hl`, `image`, `glass` (`items: [{logo|icon, title, sub, at, cross_at}]`; `logo: "si:<slug>"` = real brand logo; `"row": true` = cards side by side; `"align"`), `network`
+  (+ `sub`), `hl`, `image`, `glass` (`items: [{logo|icon, title, sub, at, cross_at}]`; `logo: "si:<slug>"` / `"kit:<slug>"` = real brand logo; `"row": true` = cards side by side; `"align"`), `logo` (`logo`, `title`, `point: [x, y]`, `cross_at`, `size`; no `pos`), `network`
   (`center`, `agents`, `counter`), `beforeafter` (`before` tile -> `after` phone). `size`, `lead`, `hold`, `sfx`.
 - Positions: `card` (full-screen cut-away), `split` (layout B: speaker panel on top, graphic below). A: `band`,
   `band-left/right`, `gap`. B: `side-left/right`, `low`, `low-clear`, `top`, or a custom `{x,y,w,h}`.

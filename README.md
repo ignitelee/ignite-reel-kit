@@ -73,6 +73,8 @@ and music are never touched by updates.
   His original README is in [docs/HYPERFRAMES-KIT-README.md](docs/HYPERFRAMES-KIT-README.md); licences in
   `LICENSE`, `licenses/` and `THIRD_PARTY_NOTICES.md`.
 - **HyperFrames** by HeyGen (Apache-2.0), **GSAP**, **faster-whisper** (MIT).
+- Extra brand logos in `library/logos/` (CapCut, MetaTrader 5, PU Prime, Premier Markets): each brand's own logo,
+  sources in `library/logos/logos.json` (CapCut icon: Wikimedia Commons, public domain). Same rule as below.
 - Brand logos from **Simple Icons** (CC0): https://simpleicons.org. Logos are trademarks of their owners:
   show them only when you mention the brand, never in a way that suggests they endorse you.
 - **Human Speak** skill by Nate Herk (MIT): https://github.com/nateherkai/human-speak, in
