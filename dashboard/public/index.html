@@ -158,6 +158,20 @@ details[open] summary{margin-bottom:6px}
 .capbox textarea{min-height:140px;font-size:15px}
 .cbmake{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
 .cbout{display:flex;gap:8px;overflow-x:auto;margin-top:10px;padding-bottom:6px}
+.cbbanner{display:flex;gap:14px;align-items:flex-start;border-radius:14px;padding:16px 20px;margin:4px 0 14px;font-size:16px;line-height:1.5;border:1.5px solid var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--panel2))}
+.cbbanner .i{color:var(--accent);margin-top:3px}.cbbanner b{display:block;font-size:18px;margin-bottom:4px}
+.ogrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}
+@media (max-width:820px){.ogrid{grid-template-columns:1fr}}
+.ocard{background:var(--panel2);border:1.5px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0;transition:opacity .2s,border-color .2s}
+.ocard.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,var(--panel2))}
+.ocard.off{opacity:.45}
+.olabel{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.oangle{font-size:14px;color:var(--muted)}
+.ohook{font-size:19px;font-weight:800;line-height:1.25}
+.oslides{margin:2px 0 4px;padding-left:20px;font-size:14px;color:#d7dde7;display:grid;gap:3px}
+.ocard .ochoose{margin-top:auto;align-self:flex-start}
+.ocard:not(.on) .ochoose{background:var(--panel);color:var(--text);border:1px solid var(--line)}
+.ocard .onot{display:none}.ocard.off .onot{display:block}
 .cbout img{width:120px;border-radius:8px;display:block;border:1px solid var(--line)}
 @media (max-width:640px){h1{font-size:25px}header .wrap{height:auto;flex-wrap:wrap;padding:10px 16px}#offline{top:0}nav{margin-left:0}.wrap{padding:0 16px 60px}.card{padding:18px}.card > .lead{margin-left:0}.send,#extrasOff{margin-left:0!important}}
 </style>
@@ -504,8 +518,8 @@ details[open] summary{margin-bottom:6px}
     <p class="short">Write all your changes in one message: each change takes 10 to 20 minutes and uses more of your plan.</p>
     <p>Under the reel, open <b>Change something</b>, type what you want in normal words, press <b>Make a change message</b>, and paste it into the <b>same Claude chat</b>. Next time, put more detail in "Anything else?" before you send it.</p></details>
   <details><summary>How do carousels work?</summary>
-    <p class="short">Claude writes the slides; you check the words; the page makes the images.</p>
-    <p>Open <b>Carousel Builder</b>, add your pictures and say what it's about, then paste the message into Claude. When Claude is done, every slide shows on the page: change any words in the boxes (the slide updates as you type), then press <b>Make my images</b>. That takes a few seconds and doesn't use your Claude plan, so change and remake as often as you like. <b>*Stars*</b> around a word put it in your colour; <b>_underscores_</b> make it the fancy italic.</p></details>
+    <p class="short">Claude gives you 3 options; you choose one; Claude writes it; you check the words; the page makes the images.</p>
+    <p>Open <b>Carousel Builder</b>, add your pictures and say what it's about, then paste the message into Claude. Claude comes back with <b>3 short options</b>: choose ONE (you don't need all of them) and paste the next message into the same Claude chat. Claude writes only that one in full and adds your pictures, which saves your Claude plan. Then every slide shows on the page: change any words in the boxes (the slide updates as you type), then press <b>Make my images</b>. That takes a few seconds and doesn't use your Claude plan, so change and remake as often as you like. <b>*Stars*</b> around a word put it in your colour; <b>_underscores_</b> make it the fancy italic.</p></details>
   <details><summary>How do I post a carousel?</summary>
     <p class="short">Download the zip, then pick the slides in order when you post.</p>
     <p>On Instagram: tap <b>+</b>, then <b>Post</b>, tap the "select multiple" icon and pick slide 01, 02, 03... in order. Paste the caption (there's a Copy button, and it's also in the zip as caption.txt). If your phone can't open the zip, download the slides one by one by tapping each picture.</p></details>

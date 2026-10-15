@@ -240,3 +240,22 @@ export function lookFor(job, draft, i, brand) {
     accent: o.accent || (ignite ? IGNITE_TEAL : brand?.accent_color || IGNITE_TEAL),
     risk: ignite || o.risk ? (brand?.risk_line || DEFAULT_RISK) : null };
 }
+
+// step 1 of a carousel job: Claude's 3 short options per topic (options.json), before anything is written in full
+export function checkOptions(o) {
+  const errors = [];
+  if (!o || !Array.isArray(o.topics) || !o.topics.length) return { errors: ['options.json needs a "topics" list with at least one topic.'] };
+  if (o.topics.length > 3) errors.push(`At most 3 topics (${o.topics.length}).`);
+  o.topics.forEach((t, ti) => {
+    const at = `Topic ${ti + 1}`;
+    if (!t.topic) errors.push(`${at}: "topic" (a short name) is missing.`);
+    if (!Array.isArray(t.options) || t.options.length !== 3) errors.push(`${at}: needs exactly 3 options (has ${t.options?.length ?? 0}).`);
+    (t.options || []).forEach((op, oi) => {
+      const w = `${at}, option ${oi + 1}`;
+      if (!op.angle) errors.push(`${w}: "angle" (one line: what makes this option different) is missing.`);
+      if (!op.hook) errors.push(`${w}: "hook" (the cover title) is missing.`);
+      if (!Array.isArray(op.slides) || op.slides.length < 4 || op.slides.length > 9) errors.push(`${w}: "slides" needs 4 to 9 short headlines (the slides after the cover).`);
+    });
+  });
+  return { errors };
+}

@@ -61,3 +61,12 @@ test('zip has a valid structure with every file stored intact', () => {
   assert.equal(z.subarray(30 + n, 30 + n + 5).toString(), 'hello');
   assert.equal(z.readUInt32LE(14), 0x3610a686); // crc32("hello")
 });
+
+test('options check: exactly 3 options per topic, each with an angle, a hook and 4-9 headlines', async () => {
+  const { checkOptions } = await import('../dashboard/public/carousel.mjs');
+  const op = { angle: 'a story', hook: 'Hook', slides: ['1', '2', '3', '4', '5'] };
+  assert.deepEqual(checkOptions({ topics: [{ topic: 'Day', options: [op, op, op] }] }).errors, []);
+  assert.ok(checkOptions(null).errors.length);
+  assert.ok(checkOptions({ topics: [{ topic: 'Day', options: [op, op] }] }).errors.some((e) => /exactly 3/.test(e)));
+  assert.ok(checkOptions({ topics: [{ options: [op, op, { hook: 'x', slides: ['1'] }] }] }).errors.length >= 3);
+});

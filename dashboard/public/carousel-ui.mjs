@@ -17,13 +17,13 @@ const IDEAS = {
 };
 const AUDIENCE = ['Beginners', 'People who already trade', 'Other IBs', 'Everyone'];
 const TONES = [['calm and expert', 'Calm and expert'], ['friendly', 'Friendly'], ['bold and direct', 'Bold and direct'], ['a story', 'Tell a story']];
-const COUNTS = [['', 'Let Claude decide'], ['1', '1'], ['2', '2'], ['3', '3'], ['4', '4'], ['5', '5']];
+const COUNTS = [['1', '1 topic'], ['2', '2 topics'], ['3', '3 topics']];
 const LOGOS_IGNITE = [['both', 'My logo + Ignite'], ['ignite', 'Ignite only'], ['mine', 'Mine only'], ['none', 'No logo']];
 const LOGOS_PERSONAL = [['mine', 'My logo'], ['none', 'No logo']];
 const ENDS = [['caption', 'Full breakdown in the caption'], ['usual', 'My usual call to action'], ['save', 'Save this for later'], ['own', 'Write my own']];
 
 const brandForLook = () => ({ ...S.brand, logo: S.brand.logoUrl && !S.brand.logoIsIgnite ? S.brand.logo : null });
-const defaultForm = (mode = 'ignite') => ({ mode, about: '', audience: '', tone: 'calm and expert', count: '', filter: 'luxury',
+const defaultForm = (mode = 'ignite') => ({ mode, about: '', audience: '', tone: 'calm and expert', count: '1', filter: 'luxury',
   logos: mode === 'ignite' ? 'both' : 'mine', accent: '', cta: 'caption', ctaText: '', notes: '' });
 const accentOf = (f) => f.accent || (f.mode === 'ignite' ? IGNITE_TEAL : S.brand.accent_color || IGNITE_TEAL);
 
@@ -73,7 +73,7 @@ function formHTML(job) {
     <div class="grid2" style="margin-top:14px">
       <div class="opt"><label class="t">Who is it for?</label>${chipRow('audience', AUDIENCE.map((a) => [a.toLowerCase(), a]), f.audience)}</div>
       <div class="opt"><label class="t">How should it sound?</label>${chipRow('tone', TONES, f.tone)}</div>
-      <div class="opt"><label class="t">How many carousels? <i class="tip">i<span class="tt">Usually 1. Pick more if your pictures cover different topics: Claude splits them up.</span></i></label>${chipRow('count', COUNTS, f.count)}</div>
+      <div class="opt"><label class="t">How many topics? <i class="tip">i<span class="tt">Claude gives you 3 options for each topic and you choose ONE to make. Most people want 1 topic. Pick more only if your pictures cover different subjects.</span></i></label>${chipRow('count', COUNTS, f.count || '1')}</div>
     </div>
     <label class="small cbl" for="cbNotes" style="margin-top:14px">Anything else? <span class="opttag">optional</span></label>
     <textarea id="cbNotes" style="min-height:60px" placeholder="e.g. Use the photo of me at the desk on the cover. Keep it short.">${esc(f.notes)}</textarea></div>
@@ -93,14 +93,14 @@ function formHTML(job) {
     </div></div>
 
   <div class="card"><h2><span class="step">5</span> Send it to Claude</h2>
-    <p class="lead">Claude looks at your pictures and writes every slide. You read and change the words here before any image is made.</p>
+    <p class="lead">Claude gives you <b>3 short options</b> to choose from. You choose one, then Claude writes it in full and adds your pictures. That way your Claude plan is only used on the one you want.</p>
     <div class="send" style="margin-left:42px"><button class="btn huge" id="cbCopy">${icon('copy')} Copy my message for Claude</button>
       <div id="cbErr5" class="err hidden"></div>
       <div id="cbAfter" class="after hidden"><b>Copied. Now, in the Claude app:</b><ul class="checklist">
         <li>${icon('check')}<span>Click <b>Code</b>, and check the folder says <span class="kbd">${esc(S.kitName)}</span></span></li>
         <li>${icon('check')}<span>Paste and press <span class="kbd">Enter</span></span></li>
         <li>${icon('shield')}<span>Click <b>Allow</b> each time Claude asks. <span class="muted">That's normal.</span></span></li>
-        <li>${icon('clock')}<span>Come back here. <span class="muted">Usually 3 to 8 minutes.</span></span></li></ul></div></div></div>`;
+        <li>${icon('clock')}<span>Come back here to choose your option. <span class="muted">Usually 2 to 4 minutes.</span></span></li></ul></div></div></div>`;
 }
 
 function readForm() {
@@ -160,7 +160,7 @@ function renderForm(job) {
 // ---------- 2. while Claude writes ----------
 function progressHTML(j) {
   const st = j.status || {}, pct = Math.max(0, Math.min(100, st.percent ?? 0)), stalled = j.state === 'working' && j.statusAge > STALL_MS;
-  return `<div class="card"><div class="jobhead"><div><h2>Claude is writing your carousels</h2><div class="meta">${esc(new Date(j.createdAt).toLocaleString())}</div></div>
+  return `<div class="card"><div class="jobhead"><div><h2>${j.choicesSent ? 'Claude is writing the option you chose' : 'Claude is writing your 3 options'}</h2><div class="meta">${esc(new Date(j.createdAt).toLocaleString())}</div></div>
       <span class="pill ${j.state === 'sent' ? 'wait' : 'working'}">${j.state === 'sent' ? 'Waiting for Claude' : 'Working'}</span></div>
     ${j.state === 'sent' && !st.percent ? `<div class="note warn">${icon('clock')}<div><b>Waiting for Claude.</b> Paste the message into the Claude app (Code, in the ${esc(S.kitName)} folder) and press Enter. If Claude asks to <b>Allow</b> something, click Allow.
       <div style="margin-top:8px"><button class="btn ghost sm" id="cbRecopy">Copy the message again</button></div></div></div>` : `
@@ -169,6 +169,72 @@ function progressHTML(j) {
       ${stalled ? `<div class="note warn">${icon('warn')}<div><b>No update for ${Math.floor(j.statusAge / 60000)} minutes.</b> Check the Claude app: if it's asking you to <b>Allow</b>, click Allow.</div></div>`
         : `<p class="muted small">${icon('info')} Keep the Claude app open. You'll read every slide here before any image is made.</p>`}`}
     <div class="row" style="margin-top:12px"><button class="linkbtn small" id="cbNew">Start a different carousel</button></div></div>`;
+}
+
+// ---------- 2b. choose ONE option (per topic): only that one is written in full ----------
+const LET = ['A', 'B', 'C'];
+let picks = {}, picksFor = null;
+function optionsHTML(job) {
+  const set = job.optionSet || {}, topics = set.topics || [], many = topics.length > 1;
+  return `<div class="cbbanner">${icon('spark')}<div><b>Claude has given you 3 options${many ? ' for each topic' : ''}. Choose ONE${many ? ' from each topic' : ''} to make.</b>
+      You don't need all of them: only the option you choose gets written in full and made into images. Your pictures are added after you choose, to save your Claude plan.</div></div>
+    ${set.message ? `<p class="small muted" style="margin:0 0 6px">From Claude: ${esc(set.message)}</p>` : ''}
+    ${topics.map((t, ti) => `<div class="card otopic" data-ti="${ti}">
+      <h2>${many ? `Topic ${ti + 1}: ` : ''}${esc(t.topic || 'Your carousel')}</h2>
+      <div class="ogrid">${(t.options || []).map((op, oi) => `<div class="ocard" data-oi="${oi}">
+        <div class="olabel">Option ${LET[oi] || oi + 1}</div>
+        <div class="oangle">${esc(op.angle || '')}</div>
+        <div class="ohook">${esc(String(op.hook || '').replace(/[*_]/g, ''))}</div>
+        <ol class="oslides">${(op.slides || []).map((s) => `<li>${esc(String(s).replace(/[*_]/g, ''))}</li>`).join('')}</ol>
+        <button class="btn sm ochoose" data-choose="${ti}:${oi}">Choose this one</button>
+        <div class="onot small muted">Not making this one</div></div>`).join('')}</div></div>`).join('')}
+    <div class="card cbmake"><h2>Make the one you chose</h2>
+      <p class="small" id="cbPickedText" style="margin:8px 0 14px">Choose an option above first.</p>
+      <div class="send"><button class="btn huge" id="cbSendPick" disabled>${icon('copy')} Copy my message for Claude</button>
+        <div id="cbErrPick" class="err hidden"></div>
+        <div id="cbAfterPick" class="after hidden"><b>Copied. Now:</b><ul class="checklist">
+          <li>${icon('check')}<span>Paste it into the <b>same Claude chat</b> and press <span class="kbd">Enter</span></span></li>
+          <li>${icon('shield')}<span>Click <b>Allow</b> when Claude asks.</span></li>
+          <li>${icon('clock')}<span>Come back here to read your slides. <span class="muted">Usually 3 to 6 minutes.</span></span></li></ul></div></div></div>
+    <details class="card" style="padding:16px 20px"><summary>None of these? Ask for 3 new options</summary>
+      <textarea id="cbNewOpts" placeholder="e.g. More personal, and start with my morning routine."></textarea>
+      <button class="btn ghost sm" style="margin-top:8px" id="cbNewOptsBtn">Copy a message for new options</button>
+      <div class="small muted" style="margin-top:6px">Then paste it into the <b>same Claude chat</b>.</div></details>
+    <div class="row" style="margin-top:12px"><button class="linkbtn small" id="cbNew">Start a different carousel</button></div>`;
+}
+function showPicks(job) {
+  const topics = job.optionSet?.topics || [];
+  $$('.otopic', root()).forEach((card) => {
+    const ti = card.dataset.ti, has = picks[ti] !== undefined;
+    $$('.ocard', card).forEach((oc) => {
+      const on = has && String(picks[ti]) === oc.dataset.oi;
+      oc.classList.toggle('on', on); oc.classList.toggle('off', has && !on);
+      $('.ochoose', oc).textContent = on ? 'Chosen' : 'Choose this one';
+    });
+  });
+  const n = Object.keys(picks).length;
+  $('#cbSendPick').disabled = !n;
+  $('#cbPickedText').innerHTML = !n ? 'Choose an option above first.'
+    : `You chose ${Object.entries(picks).map(([ti, oi]) => `<b>Option ${LET[oi]}</b>${topics.length > 1 ? ` for "${esc(topics[ti]?.topic || '')}"` : ''}`).join(', ')}.`
+      + (topics.length > 1 && n < topics.length ? ' Topics you don\'t choose from are skipped.' : '') + ' Only this gets written in full.';
+}
+function wireOptions(job) {
+  const el = root();
+  el.onclick = async (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.choose) { const [ti, oi] = b.dataset.choose.split(':'); if (String(picks[ti]) === oi) delete picks[ti]; else picks[ti] = +oi; showPicks(job); }
+    else if (b.id === 'cbSendPick') {
+      clearErr('cbErrPick');
+      try { const j = await post(`/api/carousels/${job.id}/choose`, { choices: picks }); await copy(j.message); $('#cbAfterPick').classList.remove('hidden'); toast('Copied. Paste it into the same Claude chat.');
+        setTimeout(() => { S.carousels = [j, ...S.carousels.filter((x) => x.id !== j.id)]; renderJob(j, true); }, 9000); }
+      catch (err) { showErr('cbErrPick', esc(err.message)); }
+    } else if (b.id === 'cbNewOptsBtn') {
+      try { const j = await post(`/api/carousels/${job.id}/change`, { note: $('#cbNewOpts').value, kind: 'options' }); await copy(j.message); toast('Copied. Paste it into the same Claude chat.'); picks = {}; }
+      catch (err) { toast(err.message); }
+    } else if (b.id === 'cbNew') newCarousel();
+  };
+  el.oninput = null; el.onchange = null;
+  showPicks(job);
 }
 
 // ---------- 3. check the words, then make the images ----------
@@ -332,6 +398,11 @@ function renderList() {
 function renderJob(job, force) {
   const editing = root().contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
   if (!job || job.state === 'new') { if (force || lastSig !== 'form') { form = form || { ...defaultForm(), ...(job?.options || {}) }; renderForm(job); } return; }
+  if (job.state === 'options') {
+    if (picksFor !== job.id) { picks = {}; picksFor = job.id; }
+    const sig = 'o' + job.id + JSON.stringify(job.optionSet);
+    if (!force && sig === lastSig) return; lastSig = sig; root().innerHTML = optionsHTML(job); wireOptions(job); return;
+  }
   if (job.state === 'sent' || job.state === 'working') {
     const sig = 'p' + JSON.stringify([job.id, job.state, job.status, ageKey(job)]);
     if (!force && sig === lastSig) return; lastSig = sig; root().innerHTML = progressHTML(job);

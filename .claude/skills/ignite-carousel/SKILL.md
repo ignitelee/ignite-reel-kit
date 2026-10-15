@@ -6,9 +6,28 @@ description: IGNITE Reel Kit Carousel Builder. Turn the user's pictures and brie
 # IGNITE carousels
 
 The dashboard's **Carousel Builder** collects the brief (Ignite or personal, pictures, topic, audience, tone, how
-many, filter, logos, colour, last slide) and writes `dashboard/carousels/<id>/CAROUSEL.md`. Your job is the WORDS
-and the slide plan: write `draft.json`, check it, look at it, hand back. You never make the final images: the user
-reads every slide on the dashboard, edits words (live preview), then presses **Make my images** (seconds, no Claude).
+many topics, filter, logos, colour, last slide) and writes `dashboard/carousels/<id>/CAROUSEL.md`. It works in two
+parts, to save the user's Claude plan; CAROUSEL.md says which part to do now:
+
+1. **Three short options** per topic in `options.json`: a different angle each, a cover hook and 5-8 slide
+   headlines. No full slides, no caption, no picture choices yet. The user chooses ONE per topic on the dashboard.
+2. **The chosen option(s) in full** in `draft.json`: slides, pictures, caption (below). Nothing for the others.
+
+You never make the final images: the user reads every slide on the dashboard, edits words (live preview), then
+presses **Make my images** (seconds, no Claude).
+
+### Part 1: options.json
+
+```json
+{"topics": [{"topic": "A normal working day",
+  "options": [
+    {"angle": "A story: one day, start to finish", "hook": "What a normal day looks like for me", "slides": ["6am: ...", "...", "Full breakdown in the caption"]},
+    {"angle": "A how-to list", "hook": "...", "slides": ["..."]},
+    {"angle": "Myth vs the truth", "hook": "...", "slides": ["..."]}]}],
+ "message": "one short line for them"}
+```
+Make the 3 options genuinely different (angle, hook, order), not three wordings of one idea. Headlines short
+(human-speak). Check with `node scripts/carousel.mjs options <id>`.
 
 Read CAROUSEL.md and `brand/brand.json` first. Write every word with the **human-speak** skill (Draft mode, then its
 evaluation check; clean copy only).
@@ -62,7 +81,9 @@ evaluation check; clean copy only).
 The slides shrink text to fit, but past the limits in `checkDraft` it gets too small on a phone: keep titles
 under ~60 letters and body under ~180. One idea per slide.
 
-## Writing it
+## Writing it (part 2: the chosen option)
+
+Follow the chosen option's hook and slide order (CAROUSEL.md lists it); you may tighten wording.
 
 1. **Look at every picture** (open each file). Note what each shows, where faces are, which are strongest. Use their
    best photo of themselves on the cover when there is one. Don't put a face under text: pick `photo`/`focus`.
@@ -105,3 +126,5 @@ under ~60 letters and body under ~180. One idea per slide.
 
 "Carousel job <id>: please change the words: ..." = edit the existing `draft.json`: keep the user's own edits
 (they edit on the dashboard) except where the note asks otherwise, check + look again, set status "Ready to check".
+"Carousel job <id>: please give me 3 new options: ..." = rewrite `options.json` (part 1) with their note in mind,
+check it, set status "Pick your option".

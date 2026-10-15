@@ -57,7 +57,9 @@ See [HOW TO MAKE A REEL.md](HOW%20TO%20MAKE%20A%20REEL.md) for tips.
 Open the dashboard and click **Carousel Builder**. Set up your logo and colour in **My brand** first (the page
 asks you to). Choose **Promoting Ignite** (Ignite logo and teal built in, Hub screens, a risk line on the last
 slide) or **My own content**, drop in your pictures, say what it's about, pick a filter (Luxury is the suggested
-one) and press **Copy my message**. Claude writes every slide and the post caption. You then read and change
+one) and press **Copy my message**. Claude gives you **3 short options**: choose ONE and paste the next message
+into the same chat, and Claude writes only that one in full (slides, your pictures, the post caption), which
+saves your Claude plan. You then read and change
 any words on the page, with a live preview, and press **Make my images**: 1080x1350 PNG slides plus the
 caption, as a zip. Making the images takes seconds and doesn't use your Claude plan, so you can change words
 and remake them as often as you like.

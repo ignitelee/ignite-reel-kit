@@ -191,16 +191,15 @@ const END_CTA = {
   usual: 'the last slide uses their usual call to action from brand.json "cta"',
   save: 'the last slide asks people to save the post for later',
 };
+// A carousel job has two Claude steps, to save the user's Claude plan:
+//   1. options: 3 short options per topic (a hook + slide headlines) in options.json; the user chooses ONE per topic
+//   2. full: only the chosen options are written in full (slides, pictures, caption) in draft.json
+// Then the user edits the words on the dashboard and makes the images there (no Claude needed).
 function carouselInstructions(job) {
   const o = job.options || {}, d = rel(carDir(job.id)), b = readJSON(BRAND) || {};
   const ignite = o.mode === 'ignite', imgs = job.images || [];
-  return [
-    `# Carousel job ${job.id} (from the Carousel Builder)`,
-    ``,
-    `The user started this from the IGNITE Reel Kit dashboard. They are not technical: keep anything you say short and`,
-    `plain, and only ask a question if you truly can't continue. Use the ignite-carousel skill (read`,
-    `.claude/skills/ignite-carousel/SKILL.md first) and write every word with the human-speak skill.`,
-    ``,
+  const opts = readJSON(join(carDir(job.id), 'options.json')), chosen = chosenOptions(job, opts);
+  const brief = [
     `- What it's for: ${ignite ? 'PROMOTING IGNITE (they are an Ignite partner / IB). Ignite branding; the risk line is added to the last slide automatically. Never promise income or results.' : 'their OWN content (personal brand).'}`,
     `- Their pictures (${imgs.length}): ${imgs.length ? '' : 'none: use designed slides without photos' + (ignite ? ' and the Hub screens below' : '') + '.'}`,
     ...imgs.map((x) => `  - \`${rel(join(carDir(job.id), 'images', x.file))}\` ("${x.name}")`),
@@ -208,30 +207,68 @@ function carouselInstructions(job) {
       `- Ignite's own pictures you may use (path: what it shows; layout):`,
       ...igniteImages().map((x) => `  - \`${x.path}\`: ${x.shows} Use for: ${x.use} (layout: ${x.layout})`),
       `- Ignite Hub screens you may use (phone layout; what each shows: library/hub/README.md): ${hubStills().map((h) => '`' + h + '`').join(', ')}`] : []),
-    `- How many carousels: ${o.count ? `${o.count}` : 'you decide from their pictures and topic (usually 1; more only if the pictures clearly cover different topics)'}. 5 to 8 slides each (10 at most).`,
+    `- Topics: ${o.count > 1 ? `${o.count} different topics (one carousel each)` : 'one topic (one carousel)'}. 5 to 8 slides each (10 at most).`,
     `- What it's about: ${o.about || '(not given: work it out from the pictures and their brand)'}`,
     `- Who it's for: ${o.audience || 'everyone'}. Tone: ${o.tone || 'calm and expert'}.`,
     `- Last slide: ${END_CTA[o.cta] || (o.ctaText ? `the last slide says: "${o.ctaText}"` : END_CTA.caption)}.`,
     `- Their name: ${b.your_name || '?'}; website/handle: ${b.website || 'none'}; usual call to action: ${b.cta || 'none'}; voice: ${b.voice || 'plain, direct, honest'}.`,
     o.notes ? `- Their notes: ${o.notes}` : null,
-    ``,
-    `The look (filter "${o.filter || 'luxury'}", logos, colour) is already set on the dashboard: don't change it.`,
-    ``,
-    `## Steps`,
-    `1. Look at every picture (open each image file) before planning.`,
-    `2. Write \`${d}/draft.json\` (format in the skill). Image paths are kit-relative, exactly as listed above.`,
+  ];
+  const status = (steps) => [`Write \`${d}/status.json\` at each step: \`{"step": "...", "detail": "one short friendly sentence", "percent": 0-100}\`.`, `Steps: ${steps}.`];
+  const part1 = [
+    `## Part 1: three short options (do this now)`,
+    `Save their Claude plan: do NOT write full slides, captions or pick pictures yet.`,
+    `1. Glance at their pictures (enough to know what they show) and read the brief above.`,
+    `2. For each topic write 3 genuinely different options (a different angle each: e.g. a story, a how-to list, a myth`,
+    `   vs the truth, a before/after), each = one line "angle", a cover "hook", and 5-8 short slide headlines (the slides`,
+    `   after the cover, ending with the last slide). Into \`${d}/options.json\`:`,
+    '   `{"topics": [{"topic": "short name", "options": [{"angle": "...", "hook": "...", "slides": ["...", "..."]}, x3]}], "message": "one short line"}`',
+    `3. \`node scripts/carousel.mjs options ${job.id}\` until it says OK.`,
+    `4. ${status('Looking at your pictures (30), Writing your 3 options (70), Pick your option (100)').join(' ')}`,
+    `5. Finish with status "Pick your option", percent 100, and tell them in one line: "Done: go back to the Carousel Builder`,
+    `   and choose ONE option. Then copy the next message back here."`,
+  ];
+  const part2 = chosen.length ? [
+    `## Part 2: write the chosen options in full (do this now)`,
+    `They chose (write ONLY these, one carousel each; ignore the other options):`,
+    ...chosen.map((c) => `- Topic "${c.topic}", option ${c.letter}: angle "${c.angle}"; hook "${c.hook}"; slides: ${c.slides.map((s) => `"${s}"`).join(', ')}`),
+    `1. Look at every picture now (open each image file) and give slides the pictures that fit.`,
+    `2. Write \`${d}/draft.json\` (format in the ignite-carousel skill): the chosen hook and slide order, full slide text,`,
+    `   the pictures, and the post caption. Image paths are kit-relative, exactly as listed above.`,
     `3. \`node scripts/carousel.mjs check ${job.id}\` until there are no errors (fix warnings too where you can).`,
     `4. \`node scripts/carousel.mjs render ${job.id} --check\` and look at each \`${d}/out/_check/*/sheet.jpg\`: text readable, nothing`,
     `   cut off, faces not covered, every slide earns its place. Fix and re-check.`,
-    `5. Write \`${d}/status.json\` at each step: \`{"step": "...", "detail": "one short friendly sentence", "percent": 0-100}\`.`,
-    `   Steps: Looking at your pictures (20), Planning the slides (40), Writing the words (60), Checking every slide (85), Ready to check (100).`,
+    `5. ${status('Adding your pictures (30), Writing the words (60), Checking every slide (85), Ready to check (100)').join(' ')}`,
     `6. Finish with status "Ready to check", percent 100, and tell them in one line: "Done: go back to the Carousel Builder to read`,
     `   your slides, change any words, then press Make my images." Don't make the final images: they do that after checking.`,
+  ] : [];
+  return [
+    `# Carousel job ${job.id} (from the Carousel Builder)`,
+    ``,
+    `The user started this from the IGNITE Reel Kit dashboard. They are not technical: keep anything you say short and`,
+    `plain, and only ask a question if you truly can't continue. Use the ignite-carousel skill (read`,
+    `.claude/skills/ignite-carousel/SKILL.md first) and write every word with the human-speak skill.`,
+    ``,
+    ...brief,
+    ``,
+    `The look (filter "${o.filter || 'luxury'}", logos, colour) is already set on the dashboard: don't change it.`,
+    ``,
+    ...(chosen.length ? part2 : part1),
+    ``,
     `Never post anything online. Stay inside this kit folder.`,
   ].filter((l) => l !== null).join('\n');
 }
-function carouselMessage(job, note) {
+const LETTERS = ['A', 'B', 'C'];
+function chosenOptions(job, opts) { // [{topic, letter, angle, hook, slides}] for the user's choices
+  return Object.entries(job.choices || {}).map(([ti, oi]) => {
+    const t = opts?.topics?.[+ti], op = t?.options?.[+oi];
+    return op ? { topic: t.topic, letter: LETTERS[+oi] || String(+oi + 1), ...op } : null;
+  }).filter(Boolean);
+}
+function carouselMessage(job, note, kind) {
   const d = rel(carDir(job.id));
+  if (kind === 'chosen') return `Carousel job ${job.id}: I've chosen my option${Object.keys(job.choices || {}).length > 1 ? 's' : ''}. Read ${d}/CAROUSEL.md (part 2) and write ${Object.keys(job.choices || {}).length > 1 ? 'them' : 'it'} in full.`;
+  if (note && kind === 'options') return `Carousel job ${job.id}: please give me 3 new options: ${note}\nRewrite ${d}/options.json (part 1 of ${d}/CAROUSEL.md), check it with node scripts/carousel.mjs options ${job.id}, and set ${d}/status.json to "Pick your option" when done.`;
   if (note) return `Carousel job ${job.id}: please change the words: ${note}\nEdit ${d}/draft.json (keep my other edits), check it with node scripts/carousel.mjs check ${job.id}, and set ${d}/status.json to "Ready to check" when done.`;
   return `Please make my carousels: read ${d}/CAROUSEL.md and follow it.`;
 }
@@ -240,12 +277,15 @@ function carouselView(id) {
   const statusPath = join(carDir(id), 'status.json'), status = readJSON(statusPath);
   const statusAge = existsSync(statusPath) ? Date.now() - statSync(statusPath).mtimeMs : 0;
   const draftPath = join(carDir(id), 'draft.json'), draft = readJSON(draftPath), render = readJSON(join(carDir(id), 'render.json'));
+  const options = readJSON(join(carDir(id), 'options.json'));
   let state = j.state;
   if (state === 'sent' && status?.step && status.step !== 'Waiting for Claude') state = 'working';
-  if (draft?.carousels?.length && (status?.percent ?? 100) >= 100) state = 'draft';
+  const done = (status?.percent ?? 100) >= 100;
+  if (draft?.carousels?.length && done) state = 'draft';
+  else if (options?.topics?.length && done && !j.choicesSent) state = 'options'; // step 1 done: they choose
   if (render?.state === 'rendering') state = 'rendering';
   else if (render?.state === 'done' && render.carousels?.length && state === 'draft') state = 'done';
-  return { ...j, state, status, statusAge, draft, draftAt: existsSync(draftPath) ? statSync(draftPath).mtimeMs : 0, render,
+  return { ...j, state, status, statusAge, draft, optionSet: options, draftAt: existsSync(draftPath) ? statSync(draftPath).mtimeMs : 0, render,
     hub: j.options?.mode === 'ignite' ? [...igniteImages().map((x) => x.path), ...hubStills()] : [] };
 }
 
@@ -394,7 +434,7 @@ const server = http.createServer(async (req, res) => {
       writeJSON(carFile(id), { id, createdAt: Date.now(), state: 'new', images: [], options: await readBody(req) });
       return send(res, 200, carouselView(id));
     }
-    const cm = /^\/api\/carousels\/([^/]+)\/(image|unimage|options|prepare|draft|render|change|open|delete)$/.exec(p);
+    const cm = /^\/api\/carousels\/([^/]+)\/(image|unimage|options|prepare|choose|draft|render|change|open|delete)$/.exec(p);
     if (cm && req.method === 'POST' && isId(cm[1]) && existsSync(carFile(cm[1]))) {
       const id = cm[1], job = readJSON(carFile(id)), act = cm[2];
       if (act === 'image') {
@@ -420,6 +460,17 @@ const server = http.createServer(async (req, res) => {
         job.message = carouselMessage(job); writeJSON(carFile(id), job);
         return send(res, 200, carouselView(id));
       }
+      if (act === 'choose') {
+        // step 1 -> 2: the user picked ONE option per topic; Claude writes only those in full
+        const { choices } = await readBody(req), opts = readJSON(join(carDir(id), 'options.json'));
+        const picked = Object.fromEntries(Object.entries(choices || {}).filter(([ti, oi]) => opts?.topics?.[+ti]?.options?.[+oi]).map(([ti, oi]) => [ti, +oi]));
+        if (!Object.keys(picked).length) return send(res, 400, { error: 'Choose one option first.' });
+        job.choices = picked; job.choicesSent = true; job.state = 'sent';
+        writeFileSync(join(carDir(id), 'CAROUSEL.md'), carouselInstructions(job));
+        writeJSON(join(carDir(id), 'status.json'), { step: 'Waiting for Claude', detail: 'Paste the message into the same Claude chat.', percent: 0 });
+        job.message = carouselMessage(job, null, 'chosen'); writeJSON(carFile(id), job);
+        return send(res, 200, carouselView(id));
+      }
       if (act === 'draft') {
         const { draft } = await readBody(req);
         if (!draft?.carousels?.length) return send(res, 400, { error: 'Nothing to save.' });
@@ -438,9 +489,10 @@ const server = http.createServer(async (req, res) => {
         return send(res, 200, carouselView(id));
       }
       if (act === 'change') {
-        const { note } = await readBody(req);
+        const { note, kind } = await readBody(req);
         if (!note || !note.trim()) return send(res, 400, { error: 'Type what you want changed first.' });
-        job.message = carouselMessage(job, note.trim()); job.state = 'sent'; writeJSON(carFile(id), job);
+        if (kind === 'options') { job.choicesSent = false; job.choices = {}; }
+        job.message = carouselMessage(job, note.trim(), kind); job.state = 'sent'; writeJSON(carFile(id), job);
         writeJSON(join(carDir(id), 'status.json'), { step: 'Waiting for Claude', detail: 'Paste the change message into the same Claude chat.', percent: 0 });
         return send(res, 200, carouselView(id));
       }

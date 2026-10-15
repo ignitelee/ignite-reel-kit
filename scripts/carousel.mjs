@@ -2,6 +2,7 @@
 // Carousel images: turns a carousel job's draft.json into 1080x1350 PNG slides (+ caption.txt and a zip per
 // carousel), using the same slide designs the dashboard previews (dashboard/public/carousel.mjs) in the
 // headless Chrome that HyperFrames already downloaded.
+//   node scripts/carousel.mjs options <job-id>              check options.json (step 1: 3 short options per topic)
 //   node scripts/carousel.mjs check  <job-id>               check draft.json (errors + warnings)
 //   node scripts/carousel.mjs render <job-id> [--only N] [--sheet] [--check]
 //        renders into dashboard/carousels/<id>/out/, writes render.json for the dashboard;
@@ -13,7 +14,7 @@ import { join, resolve, dirname, relative, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { homedir } from 'node:os';
 import { execFileSync, execSync } from 'node:child_process';
-import { slideHTML, checkDraft, lookFor, IGNITE_LOGO, W, H } from '../dashboard/public/carousel.mjs';
+import { slideHTML, checkDraft, checkOptions, lookFor, IGNITE_LOGO, W, H } from '../dashboard/public/carousel.mjs';
 
 const KIT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const CAR = join(KIT, 'dashboard', 'carousels');
@@ -114,8 +115,14 @@ export async function render(id, { only = null, sheet = false, check = false } =
 // ---------- CLI ----------
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const [cmd, id] = process.argv.slice(2), arg = (k) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : null; };
-  if (!['check', 'render'].includes(cmd) || !id || !/^[a-z0-9-]{6,64}$/i.test(id)) {
-    console.log('Usage: node scripts/carousel.mjs check|render <job-id> [--only N] [--sheet] [--check]'); process.exit(2);
+  if (!['check', 'render', 'options'].includes(cmd) || !id || !/^[a-z0-9-]{6,64}$/i.test(id)) {
+    console.log('Usage: node scripts/carousel.mjs options|check|render <job-id> [--only N] [--sheet] [--check]'); process.exit(2);
+  }
+  if (cmd === 'options') {
+    const o = readJSON(join(CAR, id, 'options.json')), { errors } = checkOptions(o);
+    for (const e of errors) console.log('ERROR    ' + e);
+    if (!errors.length) console.log(`OK: ${o.topics.length} topic(s), ${o.topics.reduce((n, t) => n + t.options.length, 0)} options.`);
+    process.exit(errors.length ? 1 : 0);
   }
   if (cmd === 'check') {
     const draft = readJSON(join(CAR, id, 'draft.json'));
